@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">UnisoldevTestWork</string>
+    <string name="category">Категории</string>
+    <string name="favourite">Избранное</string>
+    <string name="loadedPhotos">Загруженное</string>
+    <string name="download">Скачать</string>
+    <string name="large_image">Large Image</string>
+    <string name="back_button">Вернуться назад</string>
+    <string name="install">Установить</string>
+    <string name="unisoldev">Unisoldev Test</string>
+    <string name="menu">Меню</string>
+    <string name="download_started">Saving...</string>
+    <string name="ok">ОК</string>
+    <string name="cancel">Отмена</string>
+    <string name="main_screen">Главный экран</string>
+    <string name="lock_screen">Экран блокировки</string>
+    <string name="both_screens">Главный экран и экран блокировки</string>
+</resources>
