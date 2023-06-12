@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,13 +27,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.unisoldevtestwork.R
+import com.example.unisoldevtestwork.core.presentation.AppNavigationBar
+import com.example.unisoldevtestwork.core.presentation.AppTopBar
 import com.example.unisoldevtestwork.feature_category.presentation.util.CollectionItems
 
 @Composable
 fun CategoryPhotosScreen(
     onNavigateToSelectableCategory: (String) -> Unit,
-    updateCategory: (String) -> Unit
+    updateCategory: (String) -> Unit,
+    navController: NavHostController
 ) {
     val listOfCollection = listOf(
         CollectionItems(R.drawable.abstractphoto, "Abstract"),
@@ -46,53 +52,61 @@ fun CategoryPhotosScreen(
         CollectionItems(R.drawable.flower, "Flower"),
         CollectionItems(R.drawable.food, "Food")
     )
-
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(128.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(8.dp)
-    ) {
-        items(listOfCollection) { category ->
-            Card(
-                shape = MaterialTheme.shapes.large,
-                elevation = CardDefaults.cardElevation(10.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .height(300.dp)
-                        .fillMaxWidth()
-                        .clickable {
-                            updateCategory(category.name)
-                            onNavigateToSelectableCategory(category.name)
-                        },
+    Scaffold(topBar = {
+        AppTopBar()
+    }, bottomBar = {
+        AppNavigationBar(
+            navController
+        )
+    }) { innerPadding ->
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(128.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(8.dp),
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            items(listOfCollection) { category ->
+                Card(
+                    shape = MaterialTheme.shapes.large,
+                    elevation = CardDefaults.cardElevation(10.dp),
                 ) {
-                    Image(
-                        painter = painterResource(id = category.photoId),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                    )
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        Color.Black
-                                    ),
-                                    startY = 10F
+                            .height(300.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                updateCategory(category.name)
+                                onNavigateToSelectableCategory(category.name)
+                            },
+                    ) {
+                        Image(
+                            painter = painterResource(id = category.photoId),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            Color.Black
+                                        ),
+                                        startY = 10F
+                                    )
                                 )
-                            )
-                    )
-                    Text(
-                        text = category.name,
-                        color = Color.White,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(12.dp)
-                    )
+                        )
+                        Text(
+                            text = category.name,
+                            color = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(12.dp)
+                        )
 
+                    }
                 }
             }
         }
@@ -102,8 +116,10 @@ fun CategoryPhotosScreen(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun PreviewCategoryPhotosScreen() {
+    val navController = rememberNavController()
     CategoryPhotosScreen(
         onNavigateToSelectableCategory = {},
-        updateCategory = {}
+        updateCategory = {},
+        navController = navController
     )
 }

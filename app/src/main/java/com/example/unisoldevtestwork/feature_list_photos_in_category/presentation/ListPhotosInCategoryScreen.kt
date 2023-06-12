@@ -1,8 +1,11 @@
 package com.example.unisoldevtestwork.feature_list_photos_in_category.presentation
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +16,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,8 +28,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,11 +40,12 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import com.example.unisoldevtestwork.R
 import com.example.unisoldevtestwork.core.common.Resource
+import com.example.unisoldevtestwork.feature_favourite.data.model.FavouriteEntity
+import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.CategoryItemsDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.LinksDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.LinksXDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.ProfileImageDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.ResultDto
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.CategoryItemsDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.UrlsDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.UserDto
 
@@ -45,14 +54,17 @@ import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.Us
 fun ListPhotosInCategoryScreen(
     category: String?,
     photosState: Resource<CategoryItemsDto>,
+    favouriteState: Resource<List<FavouriteEntity>>,
     onNavigateToBack: () -> Unit,
-    onNavigateToWatchPhoto: (String) -> Unit
+    onNavigateToWatchPhoto: (String, String) -> Unit,
+    addToFavourite: (FavouriteEntity) -> Unit,
+    deleteFromFavourite: (FavouriteEntity) -> Unit,
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text =  category ?: "")
+                    Text(text = category ?: "")
                 },
                 navigationIcon = {
                     IconButton(onClick = {
@@ -65,67 +77,177 @@ fun ListPhotosInCategoryScreen(
                     }
                 }
             )
-        },
-        content = {
-            when (photosState) {
-                is Resource.Loading -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(it),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
+        }
+    ) { innerPadding ->
+        when (photosState) {
+            is Resource.Loading -> {
+                ShowLoadingScreen(innerPadding)
+            }
 
-                is Resource.Error -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(it),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = photosState.message ?: "Error")
-                    }
-                }
+            is Resource.Error -> {
+                ShowErrorScreen(innerPadding, photosState.message ?: "Error")
+            }
 
-                is Resource.Success -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(128.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(8.dp),
-                        modifier = Modifier.padding(it)
-                    ) {
-                        items(photosState.data.results) { photos ->
-                            Card(shape = MaterialTheme.shapes.large, modifier = Modifier.clickable {
-                                onNavigateToWatchPhoto(photos.urls.regular)
-                            }) {
-                                SubcomposeAsyncImage(
-                                    model = photos.urls.regular,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(300.dp),
-                                    contentScale = ContentScale.Crop,
-                                    loading = {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator()
-                                        }
-                                    },
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                    }
-                }
+            is Resource.Success -> {
+                ShowPhotosGrid(
+                    innerPadding,
+                    photosState.data?.results ?: emptyList(),
+                    favouriteState.data ?: emptyList(),
+                    onNavigateToWatchPhoto,
+                    addToFavourite,
+                    deleteFromFavourite
+                )
             }
         }
-    )
+    }
 }
+
+@Composable
+private fun ShowLoadingScreen(innerPadding: PaddingValues) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun ShowErrorScreen(innerPadding: PaddingValues, errorMessage: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = errorMessage)
+    }
+}
+
+@Composable
+private fun ShowPhotosGrid(
+    innerPadding: PaddingValues,
+    photos: List<ResultDto>,
+    favourites: List<FavouriteEntity>,
+    onNavigateToWatchPhoto: (String, String) -> Unit,
+    addToFavourite: (FavouriteEntity) -> Unit,
+    deleteFromFavourite: (FavouriteEntity) -> Unit,
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(128.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(8.dp),
+        modifier = Modifier.padding(innerPadding)
+    ) {
+        items(photos) { photo ->
+
+            ShowPhotoItem(
+                photo,
+                favourites,
+                onNavigateToWatchPhoto,
+                addToFavourite,
+                deleteFromFavourite
+            )
+        }
+    }
+}
+
+@Composable
+private fun ShowPhotoItem(
+    photo: ResultDto,
+    favourites: List<FavouriteEntity>,
+    onNavigateToWatchPhoto: (String, String) -> Unit,
+    addToFavourite: (FavouriteEntity) -> Unit,
+    deleteFromFavourite: (FavouriteEntity) -> Unit,
+) {
+    Card(shape = MaterialTheme.shapes.large, modifier = Modifier.clickable {
+        onNavigateToWatchPhoto(photo.id, photo.urls.regular)
+    }) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            SubcomposeAsyncImage(
+                model = photo.urls.regular,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                contentScale = ContentScale.Crop,
+                loading = {
+                    ShowImageLoading()
+                },
+                contentDescription = null
+            )
+            ShowFavouriteIcon(addToFavourite, deleteFromFavourite, photo, favourites)
+        }
+    }
+}
+
+
+@Composable
+private fun ShowImageLoading() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+
+@Composable
+private fun BoxScope.ShowFavouriteIcon(
+    addToFavourite: (FavouriteEntity) -> Unit,
+    deleteFromFavourite: (FavouriteEntity) -> Unit,
+    photo: ResultDto,
+    favourites: List<FavouriteEntity>
+) {
+    val isPhotoFavourite = isPhotoInFavourites(photo, favourites)
+    val scale by animateFloatAsState(
+        if (isPhotoFavourite) 1.2f else 1.0f,
+        label = "scalePhotosList"
+    )
+    val iconColor by animateColorAsState(
+        if (isPhotoFavourite) Color.Red else MaterialTheme.colorScheme.primary,
+        label = "iconColorAnimation"
+    )
+
+    IconButton(
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .scale(scale),
+        onClick = {
+            if (isPhotoFavourite) {
+                deleteFromFavourite(
+                    FavouriteEntity(
+                        id = photo.id,
+                        urlPhoto = photo.urls.regular
+                    )
+                )
+            } else {
+                addToFavourite(
+                    FavouriteEntity(
+                        id = photo.id,
+                        urlPhoto = photo.urls.regular
+                    )
+                )
+            }
+        }
+    ) {
+        Icon(
+            imageVector = if (isPhotoFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+            contentDescription = stringResource(id = R.string.favourite),
+            tint = iconColor
+        )
+    }
+}
+
+private fun isPhotoInFavourites(photo: ResultDto, favourites: List<FavouriteEntity>): Boolean {
+    return favourites.any { favouriteEntity ->
+        favouriteEntity.id == photo.id
+    }
+}
+
 
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
@@ -133,7 +255,9 @@ fun PreviewListPhotosInCategoryScreen() {
     ListPhotosInCategoryScreen(
         category = null,
         onNavigateToBack = {},
-        onNavigateToWatchPhoto = {},
+        onNavigateToWatchPhoto = { id, url ->
+
+        },
         photosState = Resource.Success(
             CategoryItemsDto(
                 results = listOf(
@@ -145,7 +269,7 @@ fun PreviewListPhotosInCategoryScreen() {
                         description = "",
                         height = 0,
                         id = "",
-                        likedByUser  = false,
+                        likedByUser = false,
                         likes = 0,
                         links = LinksDto(download = "", html = "", self = ""),
                         urls = UrlsDto(
@@ -202,6 +326,15 @@ fun PreviewListPhotosInCategoryScreen() {
                         width = 0
                     )
                 ), total = 0, totalPages = 0
+            )
+        ),
+        deleteFromFavourite = {},
+        addToFavourite = {},
+        favouriteState = Resource.Success(
+            listOf(
+                FavouriteEntity("0", "0"),
+                FavouriteEntity("0", "0"),
+                FavouriteEntity("0", "0")
             )
         )
     )

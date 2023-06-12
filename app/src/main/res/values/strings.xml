@@ -9,10 +9,14 @@
     <string name="install">Установить</string>
     <string name="unisoldev">Unisoldev Test</string>
     <string name="menu">Меню</string>
-    <string name="download_started">Saving...</string>
+    <string name="download_started">Saving…</string>
     <string name="ok">ОК</string>
     <string name="cancel">Отмена</string>
     <string name="main_screen">Главный экран</string>
     <string name="lock_screen">Экран блокировки</string>
     <string name="both_screens">Главный экран и экран блокировки</string>
+    <string name="success_set_wallpaper_on_lock_screen">Обои успешно установлены на экран блокировки</string>
+    <string name="error_set_wallpaper">Ошибка при установке обоев</string>
+    <string name="success_set_wallpaper_both_screen">Обои успешно установлены на главный экран и экран блокировки</string>
+    <string name="success_set_wallpaper_on_home_screen">Обои успешно установлены на главный экран</string>
 </resources>
