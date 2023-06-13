@@ -40,6 +40,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import com.example.unisoldevtestwork.R
 import com.example.unisoldevtestwork.core.common.Resource
+import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowErrorScreen
+import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowGradientBelow
+import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowLoadingScreen
 import com.example.unisoldevtestwork.feature_favourite.data.model.FavouriteEntity
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.CategoryItemsDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.LinksDto
@@ -81,11 +84,20 @@ fun ListPhotosInCategoryScreen(
     ) { innerPadding ->
         when (photosState) {
             is Resource.Loading -> {
-                ShowLoadingScreen(innerPadding)
+                ShowLoadingScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                )
             }
 
             is Resource.Error -> {
-                ShowErrorScreen(innerPadding, photosState.message ?: "Error")
+                ShowErrorScreen(
+                    photosState.message,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                )
             }
 
             is Resource.Success -> {
@@ -102,29 +114,6 @@ fun ListPhotosInCategoryScreen(
     }
 }
 
-@Composable
-private fun ShowLoadingScreen(innerPadding: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ShowErrorScreen(innerPadding: PaddingValues, errorMessage: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = errorMessage)
-    }
-}
 
 @Composable
 private fun ShowPhotosGrid(
@@ -166,18 +155,21 @@ private fun ShowPhotoItem(
     Card(shape = MaterialTheme.shapes.large, modifier = Modifier.clickable {
         onNavigateToWatchPhoto(photo.id, photo.urls.regular)
     }) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+        ) {
             SubcomposeAsyncImage(
                 model = photo.urls.regular,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
                 contentScale = ContentScale.Crop,
                 loading = {
                     ShowImageLoading()
                 },
-                contentDescription = null
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
             )
+            ShowGradientBelow()
             ShowFavouriteIcon(addToFavourite, deleteFromFavourite, photo, favourites)
         }
     }
@@ -208,7 +200,7 @@ private fun BoxScope.ShowFavouriteIcon(
         label = "scalePhotosList"
     )
     val iconColor by animateColorAsState(
-        if (isPhotoFavourite) Color.Red else MaterialTheme.colorScheme.primary,
+        if (isPhotoFavourite) Color.Red else Color.White,
         label = "iconColorAnimation"
     )
 

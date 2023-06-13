@@ -13,11 +13,11 @@ import com.example.unisoldevtestwork.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppTopBar() {
+fun AppTopBar(onNavigationButtonClick: ()-> Unit) {
     TopAppBar(title = {
         Text(text = stringResource(id = R.string.unisoldev))
     }, navigationIcon = {
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = { onNavigationButtonClick() }) {
             Icon(
                 imageVector = Icons.Filled.Menu, contentDescription = stringResource(
                     id = R.string.menu

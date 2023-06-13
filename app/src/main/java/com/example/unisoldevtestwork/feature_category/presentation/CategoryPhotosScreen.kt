@@ -24,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -33,27 +35,30 @@ import com.example.unisoldevtestwork.R
 import com.example.unisoldevtestwork.core.presentation.AppNavigationBar
 import com.example.unisoldevtestwork.core.presentation.AppTopBar
 import com.example.unisoldevtestwork.feature_category.presentation.util.CollectionItems
+import com.example.unisoldevtestwork.ui.theme.GradientBlack
 
 @Composable
 fun CategoryPhotosScreen(
     onNavigateToSelectableCategory: (String) -> Unit,
     updateCategory: (String) -> Unit,
-    navController: NavHostController
+    navController: NavHostController,
+    onNavigationButtonClick:() -> Unit
 ) {
     val listOfCollection = listOf(
-        CollectionItems(R.drawable.abstractphoto, "Abstract"),
-        CollectionItems(R.drawable.animal, "Animal"),
-        CollectionItems(R.drawable.anime2, "Anime"),
-        CollectionItems(R.drawable.car, "Car"),
-        CollectionItems(R.drawable.cartoon, "Cartoon"),
-        CollectionItems(R.drawable.city, "City"),
-        CollectionItems(R.drawable.colorful, "Colorful"),
-        CollectionItems(R.drawable.horror, "Horror"),
-        CollectionItems(R.drawable.flower, "Flower"),
-        CollectionItems(R.drawable.food, "Food")
+        CollectionItems(R.drawable.abstractphoto, R.string.abstract_photo),
+        CollectionItems(R.drawable.animal, R.string.animal),
+        CollectionItems(R.drawable.anime2, R.string.anime),
+        CollectionItems(R.drawable.car, R.string.car),
+        CollectionItems(R.drawable.cartoon, R.string.cartoon),
+        CollectionItems(R.drawable.city, R.string.city),
+        CollectionItems(R.drawable.colorful, R.string.colorful),
+        CollectionItems(R.drawable.horror, R.string.horror),
+        CollectionItems(R.drawable.flower, R.string.flower),
+        CollectionItems(R.drawable.food, R.string.food)
     )
+    val context = LocalContext.current
     Scaffold(topBar = {
-        AppTopBar()
+        AppTopBar(onNavigationButtonClick)
     }, bottomBar = {
         AppNavigationBar(
             navController
@@ -76,8 +81,8 @@ fun CategoryPhotosScreen(
                             .height(300.dp)
                             .fillMaxWidth()
                             .clickable {
-                                updateCategory(category.name)
-                                onNavigateToSelectableCategory(category.name)
+                                updateCategory(context.getString(category.name))
+                                onNavigateToSelectableCategory(context.getString(category.name))
                             },
                     ) {
                         Image(
@@ -92,14 +97,14 @@ fun CategoryPhotosScreen(
                                     Brush.verticalGradient(
                                         colors = listOf(
                                             Color.Transparent,
-                                            Color.Black
+                                            GradientBlack
                                         ),
-                                        startY = 10F
+                                        startY = 600F
                                     )
                                 )
                         )
                         Text(
-                            text = category.name,
+                            text = stringResource(id = category.name),
                             color = Color.White,
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
@@ -120,6 +125,7 @@ fun PreviewCategoryPhotosScreen() {
     CategoryPhotosScreen(
         onNavigateToSelectableCategory = {},
         updateCategory = {},
-        navController = navController
+        navController = navController,
+        onNavigationButtonClick = {}
     )
 }

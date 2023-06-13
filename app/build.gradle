@@ -92,5 +92,6 @@ dependencies {
     implementation("androidx.room:room-ktx:$room_version")
 
     //statusbar
-    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.30.0")
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.31.3-beta")
+
 }

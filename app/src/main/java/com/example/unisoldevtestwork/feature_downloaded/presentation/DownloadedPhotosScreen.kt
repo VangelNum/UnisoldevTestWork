@@ -1,4 +1,4 @@
-package com.example.unisoldevtestwork.feature_favourite.presentation
+package com.example.unisoldevtestwork.feature_downloaded.presentation
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -39,26 +39,26 @@ import com.example.unisoldevtestwork.core.presentation.AppTopBar
 import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowErrorScreen
 import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowGradientBelow
 import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowLoadingScreen
-import com.example.unisoldevtestwork.feature_favourite.data.model.FavouriteEntity
+import com.example.unisoldevtestwork.feature_downloaded.data.model.DownloadedEntity
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FavouritePhotosScreen(
+fun DownloadedPhotosScreen(
     navController: NavHostController,
-    favouriteState: Resource<List<FavouriteEntity>>,
+    downloadedState: Resource<List<DownloadedEntity>>,
     onNavigateToWatchPhoto: (String, String) -> Unit,
-    deleteFromFavourite: (FavouriteEntity) -> Unit,
-    onNavigationButtonClick:() -> Unit
+    deleteFromDownloaded: (DownloadedEntity) -> Unit,
+    onNavigationButtonClick:()->Unit
 ) {
     Scaffold(
         topBar = {
-            AppTopBar (onNavigationButtonClick)
+            AppTopBar(onNavigationButtonClick)
         },
         bottomBar = {
             AppNavigationBar(navController = navController)
         }
     ) { innerPadding ->
-        when (favouriteState) {
+        when (downloadedState) {
             is Resource.Loading -> {
                 ShowLoadingScreen(modifier = Modifier
                     .fillMaxSize()
@@ -67,7 +67,7 @@ fun FavouritePhotosScreen(
 
             is Resource.Error -> {
                 ShowErrorScreen(
-                    errorMessage = favouriteState.message,
+                    errorMessage = downloadedState.message,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
@@ -75,8 +75,8 @@ fun FavouritePhotosScreen(
             }
 
             is Resource.Success -> {
-                if (favouriteState.data.isNullOrEmpty()) {
-                    FavouritePhotosIsEmpty(
+                if (downloadedState.data.isNullOrEmpty()) {
+                    DownloadedPhotosIsEmpty(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
@@ -89,7 +89,7 @@ fun FavouritePhotosScreen(
                         contentPadding = PaddingValues(8.dp),
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        items(favouriteState.data, key = { item ->
+                        items(downloadedState.data, key = { item ->
                             item.id
                         }
                         ) { photos ->
@@ -119,10 +119,10 @@ fun FavouritePhotosScreen(
                                     IconButton(
                                         modifier = Modifier.align(Alignment.BottomEnd),
                                         onClick = {
-                                            deleteFromFavourite(
-                                                FavouriteEntity(
+                                            deleteFromDownloaded(
+                                                DownloadedEntity(
                                                     photos.id,
-                                                    photos.urlPhoto
+                                                    urlPhoto = photos.urlPhoto
                                                 )
                                             )
                                         }) {
@@ -146,35 +146,35 @@ fun FavouritePhotosScreen(
 }
 
 @Composable
-fun FavouritePhotosIsEmpty(
+fun DownloadedPhotosIsEmpty(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Text(text = stringResource(id = R.string.empty_favourite_list))
+        Text(text = stringResource(id = R.string.empty_downloaded_list))
     }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun PreviewFavouritePhotosScreen() {
+fun PreviewDownloadedPhotosScreen() {
     val navController = rememberNavController()
-    FavouritePhotosScreen(
+    DownloadedPhotosScreen(
         navController = navController,
-        favouriteState = Resource.Success(
+        downloadedState = Resource.Success(
             listOf(
-                FavouriteEntity(
+                DownloadedEntity(
                     "0",
                     "https://images.unsplash.com/photo-1563089145-599997674d42?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0MTQzOTR8MHwxfHNlYXJjaHwzfHxBYnN0cmFjdHxlbnwwfHx8fDE2ODY1NjQ0NTV8MA&ixlib=rb-4.0.3&q=80&w=1080"
                 ),
-                FavouriteEntity(
+                DownloadedEntity(
                     "1",
                     "https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0MTQzOTR8MHwxfHNlYXJjaHw0fHxBYnN0cmFjdHxlbnwwfHx8fDE2ODY1NjQ0NTV8MA&ixlib=rb-4.0.3&q=80&w=1080"
                 ),
-                FavouriteEntity(
+                DownloadedEntity(
                     "2",
                     "https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0MTQzOTR8MHwxfHNlYXJjaHw0fHxBYnN0cmFjdHxlbnwwfHx8fDE2ODY1NjQ0NTV8MA&ixlib=rb-4.0.3&q=80&w=1080"
                 ),
-                FavouriteEntity(
+                DownloadedEntity(
                     "3",
                     "https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0MTQzOTR8MHwxfHNlYXJjaHw0fHxBYnN0cmFjdHxlbnwwfHx8fDE2ODY1NjQ0NTV8MA&ixlib=rb-4.0.3&q=80&w=1080"
                 ),
@@ -182,8 +182,13 @@ fun PreviewFavouritePhotosScreen() {
         ),
         onNavigateToWatchPhoto = { id, url ->
 
+
         },
-        deleteFromFavourite = { },
-        onNavigationButtonClick = {}
+        deleteFromDownloaded = {
+
+        },
+        onNavigationButtonClick = {
+
+        }
     )
 }

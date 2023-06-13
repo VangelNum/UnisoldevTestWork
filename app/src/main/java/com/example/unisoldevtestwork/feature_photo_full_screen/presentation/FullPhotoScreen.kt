@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import com.example.unisoldevtestwork.R
 import com.example.unisoldevtestwork.core.common.Resource
+import com.example.unisoldevtestwork.feature_downloaded.data.model.DownloadedEntity
 import com.example.unisoldevtestwork.feature_favourite.data.model.FavouriteEntity
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.download.AndroidDownloaderImpl
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.model.FullScreenCollectionItems
@@ -78,7 +79,8 @@ fun FullPhotoScreen(
     onNavigateBack: () -> Unit,
     favouritePhotoState: Resource<List<FavouriteEntity>>,
     addToFavourite: (FavouriteEntity) -> Unit,
-    deleteFromFavourite: (FavouriteEntity) -> Unit
+    deleteFromFavourite: (FavouriteEntity) -> Unit,
+    addToDownloadedList: (DownloadedEntity) -> Unit
 ) {
     val isPhotoInFavourite = photoUrl?.let { url ->
         id?.let { entityId ->
@@ -88,10 +90,11 @@ fun FullPhotoScreen(
 
     var isTopAppBarVisible by remember { mutableStateOf(true) }
     var isBottomAppBarVisible by remember { mutableStateOf(true) }
-    val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val openDialog = remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
 
     Scaffold(snackbarHost = { SnackbarHost(hostState = snackBarHostState) }, topBar = {
         TopBarFullPhotoScreen(
@@ -108,7 +111,8 @@ fun FullPhotoScreen(
             context,
             scope,
             snackBarHostState,
-            openDialog
+            openDialog,
+            addToDownloadedList
         )
     }) {
         val radioOptions = listOf(
@@ -149,8 +153,6 @@ fun FullPhotoScreen(
         }
         ShowAboveGradientFullPhotoScreen()
         ShowBelowGradientFullPhotoScreen()
-
-
     }
 }
 
@@ -268,7 +270,7 @@ fun ShowBelowGradientFullPhotoScreen() {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                alpha = 0.8F, brush = verticalGradient(
+                alpha = 0.6F, brush = verticalGradient(
                     listOf(Color.Transparent, GradientBlack),
                     startY = 1500F,
                 )
@@ -283,8 +285,8 @@ fun ShowAboveGradientFullPhotoScreen() {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                alpha = 0.8F, brush = verticalGradient(
-                    listOf(GradientBlack, Color.Transparent), startY = 0F, endY = 300F
+                alpha = 0.6F, brush = verticalGradient(
+                    listOf(GradientBlack, Color.Transparent), startY = 0F, endY = 200F
                 )
             ),
     )
@@ -302,7 +304,8 @@ fun BottomBarFullPhotoScreen(
     context: Context,
     scope: CoroutineScope,
     snackBarHostState: SnackbarHostState,
-    openDialog: MutableState<Boolean>
+    openDialog: MutableState<Boolean>,
+    addToDownloadedList: (DownloadedEntity) -> Unit
 ) {
     AnimatedVisibility(
         visible = bottomAppBarVisible,
@@ -347,12 +350,20 @@ fun BottomBarFullPhotoScreen(
                         Icon(
                             painter = painterResource(id = screen.icon),
                             contentDescription = null,
+                            tint = Color.White
                         )
                     }
-                }, label = { Text(stringResource(screen.name)) }, onClick = {
+                }, label = { Text(stringResource(screen.name), color = Color.White) }, onClick = {
                     when (screen.name) {
                         R.string.download -> {
-                            downloadToggle(context, photoUrl, scope, snackBarHostState)
+                            downloadToggle(
+                                context = context,
+                                scope = scope,
+                                snackBarHostState = snackBarHostState,
+                                id = id,
+                                photoUrl = photoUrl,
+                                addToDownloaded = addToDownloadedList
+                            )
                         }
 
                         R.string.install -> {
@@ -378,16 +389,23 @@ fun BottomBarFullPhotoScreen(
 
 fun downloadToggle(
     context: Context,
-    photoUrl: String?,
     scope: CoroutineScope,
-    snackBarHostState: SnackbarHostState
+    snackBarHostState: SnackbarHostState,
+    id: String?,
+    photoUrl: String?,
+    addToDownloaded: (DownloadedEntity) -> Unit
 ) {
     val downloader = AndroidDownloaderImpl(context)
-    if (photoUrl != null) {
+    if (photoUrl != null && id != null) {
         scope.launch {
             snackBarHostState.showSnackbar(context.getString(R.string.download_started))
         }
         downloader.downloadFile(photoUrl)
+        addToDownloaded(DownloadedEntity(id, photoUrl))
+    } else {
+        scope.launch {
+            snackBarHostState.showSnackbar(context.getString(R.string.error_download_image))
+        }
     }
 }
 
@@ -422,7 +440,8 @@ fun TopBarFullPhotoScreen(isTopAppBarVisible: Boolean, onNavigateBack: () -> Uni
                 IconButton(onClick = { onNavigateBack() }) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = stringResource(id = R.string.back_button)
+                        contentDescription = stringResource(id = R.string.back_button),
+                        tint = Color.White
                     )
                 }
             },
@@ -452,6 +471,9 @@ fun PreviewFullPhotoScreen() {
 
         },
         deleteFromFavourite = {
+
+        },
+        addToDownloadedList = {
 
         }
     )

@@ -19,4 +19,18 @@
     <string name="error_set_wallpaper">Ошибка при установке обоев</string>
     <string name="success_set_wallpaper_both_screen">Обои успешно установлены на главный экран и экран блокировки</string>
     <string name="success_set_wallpaper_on_home_screen">Обои успешно установлены на главный экран</string>
+    <string name="empty_favourite_list">Список избранного пуст</string>
+    <string name="animal">Animal</string>
+    <string name="abstract_photo">Abstract</string>
+    <string name="anime">Anime</string>
+    <string name="car">Car</string>
+    <string name="cartoon">Cartoon</string>
+    <string name="city">City</string>
+    <string name="colorful">Colorful</string>
+    <string name="horror">Horror</string>
+    <string name="flower">Flower</string>
+    <string name="food">Food</string>
+    <string name="empty_downloaded_list">Список загруженного пуст</string>
+    <string name="error_download_image">Ошибка скачивания изображения</string>
+    <string name="settings">Настройки</string>
 </resources>
