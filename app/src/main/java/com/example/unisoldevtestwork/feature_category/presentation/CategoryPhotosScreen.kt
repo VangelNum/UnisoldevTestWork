@@ -40,7 +40,6 @@ import com.example.unisoldevtestwork.ui.theme.GradientBlack
 @Composable
 fun CategoryPhotosScreen(
     onNavigateToSelectableCategory: (String) -> Unit,
-    updateCategory: (String) -> Unit,
     navController: NavHostController,
     onNavigationButtonClick:() -> Unit
 ) {
@@ -81,7 +80,6 @@ fun CategoryPhotosScreen(
                             .height(300.dp)
                             .fillMaxWidth()
                             .clickable {
-                                updateCategory(context.getString(category.name))
                                 onNavigateToSelectableCategory(context.getString(category.name))
                             },
                     ) {
@@ -124,7 +122,6 @@ fun PreviewCategoryPhotosScreen() {
     val navController = rememberNavController()
     CategoryPhotosScreen(
         onNavigateToSelectableCategory = {},
-        updateCategory = {},
         navController = navController,
         onNavigationButtonClick = {}
     )

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
@@ -14,9 +15,11 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
@@ -32,10 +35,18 @@ import com.example.unisoldevtestwork.feature_favourite.presentation.FavouritePho
 import com.example.unisoldevtestwork.feature_favourite.presentation.FavouriteViewModel
 import com.example.unisoldevtestwork.feature_list_photos_in_category.presentation.ListPhotosInCategoryScreen
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.FullPhotoScreen
+import com.example.unisoldevtestwork.feature_settings.presentation.SettingsScreen
+import com.example.unisoldevtestwork.feature_settings.presentation.SettingsState
+import com.example.unisoldevtestwork.feature_settings.presentation.SettingsViewModel
+import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.DARK_THEME
+import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.LIGHT_THEME
+import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.SYSTEM_THEME
 import com.example.unisoldevtestwork.ui.theme.UnisoldevTestWorkTheme
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import com.google.accompanist.systemuicontroller.SystemUiController
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
@@ -48,18 +59,24 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            UnisoldevTestWorkTheme {
+            val drawerState = rememberDrawerState(DrawerValue.Closed)
+            val navController = rememberAnimatedNavController()
+            val favouriteViewModel = hiltViewModel<FavouriteViewModel>()
+            val downloadedViewModel = hiltViewModel<DownloadedPhotoViewModel>()
+            val settingsViewModel = hiltViewModel<SettingsViewModel>()
+            val settingsState = settingsViewModel.settingsState.collectAsStateWithLifecycle().value
+            val favouriteState = favouriteViewModel.favouriteState.collectAsStateWithLifecycle().value
+            val scope = rememberCoroutineScope()
+            val appTheme = getThemeFromSettings(settingsState)
+            val systemUiController = rememberSystemUiController()
+            SystemBarColors(settingsState, systemUiController)
+            UnisoldevTestWorkTheme(
+                useDarkTheme = appTheme
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val drawerState = rememberDrawerState(DrawerValue.Closed)
-                    val navController = rememberAnimatedNavController()
-                    val photosViewModel = hiltViewModel<PhotosViewModel>()
-                    val favouriteViewModel = hiltViewModel<FavouriteViewModel>()
-                    val favouriteState = favouriteViewModel.favouriteState.collectAsStateWithLifecycle().value
-                    val downloadedViewModel = hiltViewModel<DownloadedPhotoViewModel>()
-                    val scope = rememberCoroutineScope()
                     ModalNavigationDrawer(
                         drawerState = drawerState,
                         drawerContent = {
@@ -71,7 +88,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             ModalDrawerSheet {
-                                AppDrawerContent()
+                                AppDrawerContent(onNavigateToSettings = {
+                                    navController.navigate(Screens.SettingsScreen.route)
+                                    scope.launch {
+                                        drawerState.close()
+                                    }
+                                })
                             }
                         }
                     ) {
@@ -79,16 +101,12 @@ class MainActivity : ComponentActivity() {
                             AnimatedNavHost(
                                 navController = navController,
                                 startDestination = Screens.CategoryPhotos.route,
-                                modifier = Modifier
-                                    .padding(innerPadding)
+                                modifier = Modifier.padding(innerPadding)
                             ) {
                                 composable(Screens.CategoryPhotos.route) {
                                     CategoryPhotosScreen(
                                         onNavigateToSelectableCategory = {
                                             navController.navigate(Screens.ListPhotosInCategory.route + "/$it")
-                                        },
-                                        updateCategory = { category ->
-                                            photosViewModel.getPhotosByCategory(category)
                                         },
                                         navController = navController,
                                         onNavigationButtonClick = {
@@ -107,8 +125,13 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
                                 ) { entry ->
-                                    val photosState = photosViewModel.photosState.collectAsStateWithLifecycle().value
                                     val category = entry.arguments?.getString("category")
+                                    val photosViewModel = hiltViewModel<PhotosViewModel>()
+                                    photosViewModel.getPhotosByCategory(
+                                        category = category ?: "animal"
+                                    )
+                                    val photosState =
+                                        photosViewModel.photosState.collectAsStateWithLifecycle().value
                                     ListPhotosInCategoryScreen(
                                         category = category,
                                         photosState = photosState,
@@ -178,7 +201,8 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable(Screens.DownloadedPhotos.route) {
-                                    val downloadedState = downloadedViewModel.downloadPhotosState.collectAsStateWithLifecycle().value
+                                    val downloadedState =
+                                        downloadedViewModel.downloadPhotosState.collectAsStateWithLifecycle().value
                                     LaunchedEffect(key1 = Unit) {
                                         if (downloadedState !is Resource.Success) {
                                             downloadedViewModel.getDownloadedPhotos()
@@ -204,10 +228,54 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
                                 }
+                                composable(Screens.SettingsScreen.route) {
+                                    SettingsScreen(settingsState, onNavigateBack = {
+                                        navController.popBackStack()
+                                    }, onUpdateTheme = {
+                                        settingsViewModel.setTheme(it)
+                                    })
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+}
+
+@Composable
+private fun getThemeFromSettings(settingsState: SettingsState): Boolean {
+    return when (settingsState.themeMode) {
+        LIGHT_THEME -> false
+        DARK_THEME -> true
+        SYSTEM_THEME -> isSystemInDarkTheme()
+        else -> isSystemInDarkTheme()
+    }
+}
+
+@Composable
+private fun SystemBarColors(
+    settingsState: SettingsState,
+    systemUiController: SystemUiController
+) {
+    when (settingsState.themeMode) {
+        LIGHT_THEME -> {
+            systemUiController.setStatusBarColor(darkIcons = true, color = Color.White)
+            systemUiController.setNavigationBarColor(color = MaterialTheme.colorScheme.tertiaryContainer)
+        }
+
+        DARK_THEME -> {
+            systemUiController.setSystemBarsColor(color = Color.Black)
+        }
+
+        else -> {
+            if (isSystemInDarkTheme()) {
+                systemUiController.setSystemBarsColor(color = Color.Black)
+            } else {
+                systemUiController.setStatusBarColor(darkIcons = true, color = Color.White)
+                systemUiController.setNavigationBarColor(color = MaterialTheme.colorScheme.tertiaryContainer)
             }
         }
     }

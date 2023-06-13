@@ -98,12 +98,12 @@ fun FavouritePhotosScreen(
                                 .clickable {
                                     onNavigateToWatchPhoto(photos.id, photos.urlPhoto)
                                 }) {
-                                Box(modifier = Modifier.fillMaxSize()) {
+                                Box(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp)) {
                                     SubcomposeAsyncImage(
                                         model = photos.urlPhoto,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(300.dp),
+                                        modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop,
                                         loading = {
                                             Box(

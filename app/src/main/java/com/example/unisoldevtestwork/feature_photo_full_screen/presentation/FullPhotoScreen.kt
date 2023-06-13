@@ -182,7 +182,9 @@ fun ShowInstallAlertDialog(
                             .fillMaxWidth()
                             .selectable(
                                 selected = (text == selectedOption),
-                                onClick = { onOptionSelected(text) },
+                                onClick = {
+                                    onOptionSelected(text)
+                                          },
                                 role = Role.RadioButton
                             )
                             .padding(vertical = 8.dp),

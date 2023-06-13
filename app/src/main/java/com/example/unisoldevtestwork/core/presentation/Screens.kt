@@ -10,4 +10,5 @@ sealed class Screens(val route: String, @StringRes val resourceId: Int, @Drawabl
     object DownloadedPhotos : Screens("downloaded_photos", R.string.loadedPhotos,R.drawable.outline_file_download_24)
     object ListPhotosInCategory : Screens("list_photos_in_category", 0,0)
     object FullScreenPhoto : Screens("full_screen_photo", 0, 0)
+    object SettingsScreen : Screens("settings_screen", 0, 0)
 }

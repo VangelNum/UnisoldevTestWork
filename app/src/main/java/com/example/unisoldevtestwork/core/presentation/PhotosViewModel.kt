@@ -19,7 +19,14 @@ class PhotosViewModel @Inject constructor(
     private val _photosState: MutableStateFlow<Resource<CategoryItemsDto>> = MutableStateFlow(Resource.Loading())
     val photosState = _photosState.asStateFlow()
 
+
+    private var previousCategory: String? = null
     fun getPhotosByCategory(category: String) {
+        if (category == previousCategory) {
+            return
+        }
+        previousCategory = category
+
         getPhotosByCategoryUseCase(category).onEach { response ->
             _photosState.value = response
         }.launchIn(viewModelScope)

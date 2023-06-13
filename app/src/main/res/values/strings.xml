@@ -33,4 +33,8 @@
     <string name="empty_downloaded_list">Список загруженного пуст</string>
     <string name="error_download_image">Ошибка скачивания изображения</string>
     <string name="settings">Настройки</string>
+    <string name="theme_of_application">Тема приложения</string>
+    <string name="light_theme">Светлая</string>
+    <string name="dark_theme">Темная</string>
+    <string name="apply_theme_system">Согласно системным настройкам</string>
 </resources>
