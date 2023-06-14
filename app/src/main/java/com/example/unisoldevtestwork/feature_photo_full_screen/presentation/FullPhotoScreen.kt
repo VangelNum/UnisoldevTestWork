@@ -1,9 +1,6 @@
 package com.example.unisoldevtestwork.feature_photo_full_screen.presentation
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -37,12 +34,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,19 +56,11 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import com.example.unisoldevtestwork.R
 import com.example.unisoldevtestwork.core.common.Resource
-import com.example.unisoldevtestwork.feature_downloaded.data.model.DownloadedEntity
 import com.example.unisoldevtestwork.feature_favourite.data.model.FavouriteEntity
-import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.download.AndroidDownloaderImpl
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.model.FullScreenCollectionItems
-import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.set_wallpapers.Result
-import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.set_wallpapers.setWallpaperToBothScreens
-import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.set_wallpapers.setWallpaperToHomeScreen
-import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.set_wallpapers.setWallpaperToLockScreen
-import com.example.unisoldevtestwork.feature_settings.presentation.NetworkType
+import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.set_wallpapers_types.WallpaperSetType
+import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.text_helper.UiText
 import com.example.unisoldevtestwork.ui.theme.GradientBlack
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-
 
 //suppress because full screen image is needed
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -83,8 +72,10 @@ fun FullPhotoScreen(
     favouritePhotoState: Resource<List<FavouriteEntity>>,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
-    addToDownloadedList: (DownloadedEntity) -> Unit,
-    networkType: NetworkType
+    downloadToggle: () -> Unit,
+    fullPhotoDownloadChannel: UiText?,
+    fullPhotoSetWallpaperChannel: UiText?,
+    setWallpaperToggle: (wallpaperSetType: WallpaperSetType) -> Unit
 ) {
     val isPhotoInFavourite = photoUrl?.let { url ->
         id?.let { entityId ->
@@ -95,10 +86,22 @@ fun FullPhotoScreen(
     var isTopAppBarVisible by remember { mutableStateOf(true) }
     var isBottomAppBarVisible by remember { mutableStateOf(true) }
     val snackBarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     val openDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
-
+    LaunchedEffect(key1 = fullPhotoDownloadChannel) {
+        fullPhotoDownloadChannel?.let { state ->
+            snackBarHostState.showSnackbar(
+                message = state.asString(context)
+            )
+        }
+    }
+    LaunchedEffect(key1 = fullPhotoSetWallpaperChannel) {
+        fullPhotoSetWallpaperChannel?.let { state ->
+            snackBarHostState.showSnackbar(
+                message = state.asString(context)
+            )
+        }
+    }
 
     Scaffold(snackbarHost = { SnackbarHost(hostState = snackBarHostState) }, topBar = {
         TopBarFullPhotoScreen(
@@ -106,34 +109,21 @@ fun FullPhotoScreen(
         )
     }, bottomBar = {
         BottomBarFullPhotoScreen(
-            isBottomAppBarVisible,
-            isPhotoInFavourite,
-            photoUrl,
-            id,
-            addToFavourite,
-            deleteFromFavourite,
-            context,
-            scope,
-            snackBarHostState,
-            openDialog,
-            addToDownloadedList,
-            networkType
+            bottomAppBarVisible = isBottomAppBarVisible,
+            photoInFavourite = isPhotoInFavourite,
+            photoUrl = photoUrl,
+            id = id,
+            addToFavourite = addToFavourite,
+            deleteFromFavourite = deleteFromFavourite,
+            openDialog = openDialog,
+            downloadToggle = downloadToggle,
         )
     }) {
-        val radioOptions = listOf(
-            R.string.main_screen, R.string.lock_screen, R.string.both_screens
-        )
-        val (selectedOption, onOptionSelected) = remember { mutableIntStateOf(radioOptions[0]) }
+
         if (openDialog.value) {
             ShowInstallAlertDialog(
-                radioOptions = radioOptions,
                 openDialog = openDialog,
-                selectedOption = selectedOption,
-                onOptionSelected = onOptionSelected,
-                photoUrl = photoUrl,
-                context = context,
-                scope = scope,
-                snackBarHostState = snackBarHostState
+                setWallpaperToggle = setWallpaperToggle
             )
         }
         Box(modifier = Modifier
@@ -163,15 +153,13 @@ fun FullPhotoScreen(
 
 @Composable
 fun ShowInstallAlertDialog(
-    radioOptions: List<Int>,
     openDialog: MutableState<Boolean>,
-    selectedOption: Int,
-    onOptionSelected: (Int) -> Unit,
-    photoUrl: String?,
-    context: Context,
-    scope: CoroutineScope,
-    snackBarHostState: SnackbarHostState
+    setWallpaperToggle: (wallpaperSetType: WallpaperSetType) -> Unit
 ) {
+    val radioOptions = listOf(
+        R.string.main_screen, R.string.lock_screen, R.string.both_screens
+    )
+    val (selectedOption, onOptionSelected) = remember { mutableIntStateOf(radioOptions[0]) }
     AlertDialog(
         onDismissRequest = {
             openDialog.value = false
@@ -212,48 +200,15 @@ fun ShowInstallAlertDialog(
                 openDialog.value = false
                 when (selectedOption) {
                     R.string.main_screen -> {
-                        scope.launch {
-                            val result = setWallpaperToHomeScreen(context, photoUrl)
-                            when (result) {
-                                is Result.Failure -> {
-                                    snackBarHostState.showSnackbar(context.getString(R.string.error_set_wallpaper))
-                                }
-
-                                is Result.Success -> {
-                                    snackBarHostState.showSnackbar(context.getString(R.string.success_set_wallpaper_on_home_screen))
-                                }
-                            }
-                        }
+                        setWallpaperToggle(WallpaperSetType.HOME_SCREEN)
                     }
 
                     R.string.lock_screen -> {
-                        scope.launch {
-                            val result = setWallpaperToLockScreen(context, photoUrl)
-                            when (result) {
-                                is Result.Failure -> {
-                                    snackBarHostState.showSnackbar(context.getString(R.string.error_set_wallpaper))
-                                }
-
-                                is Result.Success -> {
-                                    snackBarHostState.showSnackbar(context.getString(R.string.success_set_wallpaper_on_lock_screen))
-                                }
-                            }
-                        }
+                        setWallpaperToggle(WallpaperSetType.LOCK_SCREEN)
                     }
 
                     R.string.both_screens -> {
-                        scope.launch {
-                            val result = setWallpaperToBothScreens(context, photoUrl)
-                            when (result) {
-                                is Result.Failure -> {
-                                    snackBarHostState.showSnackbar(context.getString(R.string.error_set_wallpaper))
-                                }
-
-                                is Result.Success -> {
-                                    snackBarHostState.showSnackbar(context.getString(R.string.success_set_wallpaper_both_screen))
-                                }
-                            }
-                        }
+                        setWallpaperToggle(WallpaperSetType.BOTH_SCREENS)
                     }
                 }
             }) {
@@ -308,12 +263,8 @@ fun BottomBarFullPhotoScreen(
     id: String?,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
-    context: Context,
-    scope: CoroutineScope,
-    snackBarHostState: SnackbarHostState,
     openDialog: MutableState<Boolean>,
-    addToDownloadedList: (DownloadedEntity) -> Unit,
-    networkType: NetworkType
+    downloadToggle: () -> Unit
 ) {
     AnimatedVisibility(
         visible = bottomAppBarVisible,
@@ -335,46 +286,39 @@ fun BottomBarFullPhotoScreen(
                 ),
             )
             fullScreenBottomItems.forEach { screen ->
-                NavigationBarItem(icon = {
-                    if (screen.name == R.string.favourite) {
-                        if (photoInFavourite) {
-                            Icon(
-                                imageVector = Icons.Filled.Favorite,
-                                contentDescription = stringResource(
-                                    id = R.string.favourite,
-                                ),
-                                tint = Color.Red
-                            )
+                NavigationBarItem(
+                    icon = {
+                        if (screen.name == R.string.favourite) {
+                            if (photoInFavourite) {
+                                Icon(
+                                    imageVector = Icons.Filled.Favorite,
+                                    contentDescription = stringResource(
+                                        id = R.string.favourite,
+                                    ),
+                                    tint = Color.Red
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(id = screen.icon),
+                                    contentDescription = stringResource(
+                                        id = R.string.favourite
+                                    ),
+                                    tint = Color.White
+                                )
+                            }
                         } else {
                             Icon(
                                 painter = painterResource(id = screen.icon),
-                                contentDescription = stringResource(
-                                    id = R.string.favourite
-                                ),
+                                contentDescription = null,
                                 tint = Color.White
                             )
                         }
-                    } else {
-                        Icon(
-                            painter = painterResource(id = screen.icon),
-                            contentDescription = null,
-                            tint = Color.White
-                        )
-                    }
-                },
+                    },
                     label = { Text(stringResource(screen.name), color = Color.White) },
                     onClick = {
                         when (screen.name) {
                             R.string.download -> {
-                                downloadToggle(
-                                    context = context,
-                                    scope = scope,
-                                    snackBarHostState = snackBarHostState,
-                                    id = id,
-                                    photoUrl = photoUrl,
-                                    addToDownloaded = addToDownloadedList,
-                                    networkType
-                                )
+                                downloadToggle()
                             }
 
                             R.string.install -> {
@@ -395,70 +339,6 @@ fun BottomBarFullPhotoScreen(
                     selected = false
                 )
             }
-        }
-    }
-}
-
-fun downloadToggle(
-    context: Context,
-    scope: CoroutineScope,
-    snackBarHostState: SnackbarHostState,
-    id: String?,
-    photoUrl: String?,
-    addToDownloaded: (DownloadedEntity) -> Unit,
-    networkType: NetworkType
-) {
-    val downloader = AndroidDownloaderImpl(context)
-    if (photoUrl != null && id != null) {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkCapabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-        val isWiFiAvailable = networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
-        val isMobileDataAvailable = networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
-
-        when (networkType) {
-            NetworkType.WIFI -> {
-                if (isWiFiAvailable) {
-                    scope.launch {
-                        snackBarHostState.showSnackbar(context.getString(R.string.download_started))
-                    }
-                    downloader.downloadFile(networkType, photoUrl)
-                    addToDownloaded(DownloadedEntity(id, photoUrl))
-                } else {
-                    scope.launch {
-                        snackBarHostState.showSnackbar(context.getString(R.string.error_wifi_unavailable))
-                    }
-                }
-            }
-            NetworkType.MOBILE_DATA -> {
-                if (isMobileDataAvailable) {
-                    scope.launch {
-                        snackBarHostState.showSnackbar(context.getString(R.string.download_started))
-                    }
-                    downloader.downloadFile(networkType, photoUrl)
-                    addToDownloaded(DownloadedEntity(id, photoUrl))
-                } else {
-                    scope.launch {
-                        snackBarHostState.showSnackbar(context.getString(R.string.error_mobile_data_unavailable))
-                    }
-                }
-            }
-            else -> {
-                if (isWiFiAvailable || isMobileDataAvailable) {
-                    scope.launch {
-                        snackBarHostState.showSnackbar(context.getString(R.string.download_started))
-                    }
-                    downloader.downloadFile(networkType, photoUrl)
-                    addToDownloaded(DownloadedEntity(id, photoUrl))
-                } else {
-                    scope.launch {
-                        snackBarHostState.showSnackbar(context.getString(R.string.error_network_unavailable))
-                    }
-                }
-            }
-        }
-    } else {
-        scope.launch {
-            snackBarHostState.showSnackbar(context.getString(R.string.error_download_image))
         }
     }
 }
@@ -527,9 +407,13 @@ fun PreviewFullPhotoScreen() {
         deleteFromFavourite = {
 
         },
-        addToDownloadedList = {
+        downloadToggle = {
 
         },
-        networkType = NetworkType.DEFAULT
+        fullPhotoDownloadChannel = UiText.StringResource(0),
+        fullPhotoSetWallpaperChannel = null,
+        setWallpaperToggle = {
+
+        }
     )
 }

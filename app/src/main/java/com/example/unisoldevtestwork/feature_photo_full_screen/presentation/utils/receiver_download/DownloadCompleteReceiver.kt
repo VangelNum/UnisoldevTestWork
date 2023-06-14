@@ -1,4 +1,4 @@
-package com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.download
+package com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.receiver_download
 
 import android.app.DownloadManager
 import android.content.BroadcastReceiver

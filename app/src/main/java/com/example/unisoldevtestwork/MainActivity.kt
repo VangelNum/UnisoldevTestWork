@@ -35,6 +35,7 @@ import com.example.unisoldevtestwork.feature_favourite.presentation.FavouriteVie
 import com.example.unisoldevtestwork.feature_list_photos_in_category.presentation.ListPhotosInCategoryScreen
 import com.example.unisoldevtestwork.feature_list_photos_in_category.presentation.PhotosViewModel
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.FullPhotoScreen
+import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.FullPhotoViewModel
 import com.example.unisoldevtestwork.feature_settings.presentation.SettingsScreen
 import com.example.unisoldevtestwork.feature_settings.presentation.SettingsViewModel
 import com.example.unisoldevtestwork.feature_settings.presentation.ThemeOption
@@ -62,8 +63,7 @@ class MainActivity : ComponentActivity() {
             val downloadedViewModel = hiltViewModel<DownloadedPhotoViewModel>()
             val settingsViewModel = hiltViewModel<SettingsViewModel>()
             val settingsState = settingsViewModel.settingsState.collectAsStateWithLifecycle().value
-            val favouriteState =
-                favouriteViewModel.favouriteState.collectAsStateWithLifecycle().value
+            val favouriteState = favouriteViewModel.favouriteState.collectAsStateWithLifecycle().value
             val scope = rememberCoroutineScope()
             val appTheme = getThemeFromSettings(settingsState.themeMode)
             val systemUiController = rememberSystemUiController()
@@ -167,15 +167,31 @@ class MainActivity : ComponentActivity() {
                                     )) { entry ->
                                     val photoUrl = entry.arguments?.getString("photoUrl")
                                     val id = entry.arguments?.getString("id")
+                                    val fullPhotoViewModel = hiltViewModel<FullPhotoViewModel>()
+                                    val fullPhotoDownloadChannel = fullPhotoViewModel.fullPhotoDownloadChannel.collectAsStateWithLifecycle(
+                                        initialValue = null
+                                    ).value
+                                    val fullPhotoSetWallpaperChannel = fullPhotoViewModel.fullPhotoSetWallpaperChannel.collectAsStateWithLifecycle(
+                                        initialValue = null
+                                    ).value
                                     FullPhotoScreen(id = id, photoUrl = photoUrl, onNavigateBack = {
                                         navController.popBackStack()
                                     }, favouritePhotoState = favouriteState, addToFavourite = {
                                         favouriteViewModel.insertPhoto(it)
                                     }, deleteFromFavourite = {
                                         favouriteViewModel.deletePhoto(it)
-                                    }, addToDownloadedList = {
-                                        downloadedViewModel.addToDownloadedList(it)
-                                    }, networkType = settingsState.networkType)
+                                    },
+                                        downloadToggle = {
+                                            fullPhotoViewModel.downloadToggle(
+                                                id, photoUrl, settingsState.networkType
+                                            )
+                                        },
+                                        fullPhotoDownloadChannel= fullPhotoDownloadChannel,
+                                        fullPhotoSetWallpaperChannel = fullPhotoSetWallpaperChannel,
+                                        setWallpaperToggle = { wallpaperSetType ->
+                                            fullPhotoViewModel.setWallpapers(wallpaperSetType, photoUrl)
+                                        }
+                                    )
                                 }
                                 composable(Screens.FavouritePhotos.route) {
                                     FavouritePhotosScreen(

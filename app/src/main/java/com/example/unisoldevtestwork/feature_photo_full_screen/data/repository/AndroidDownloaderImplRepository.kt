@@ -1,15 +1,15 @@
-package com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.download
+package com.example.unisoldevtestwork.feature_photo_full_screen.data.repository
 
 import android.app.DownloadManager
-import android.content.Context
 import android.os.Environment
 import androidx.core.net.toUri
+import com.example.unisoldevtestwork.feature_photo_full_screen.domain.repository.DownloaderRepository
 import com.example.unisoldevtestwork.feature_settings.presentation.NetworkType
+import javax.inject.Inject
 
-class AndroidDownloaderImpl(
-    private val context: Context
-): Downloader {
-    private val downloadManager = context.getSystemService(DownloadManager::class.java)
+class AndroidDownloaderImplRepository @Inject constructor(
+    private val downloadManager: DownloadManager
+): DownloaderRepository {
 
     override fun downloadFile(networkType: NetworkType, url: String): Long {
         val request = DownloadManager.Request(url.toUri())
