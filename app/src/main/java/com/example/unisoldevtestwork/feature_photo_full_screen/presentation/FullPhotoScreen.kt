@@ -2,6 +2,8 @@ package com.example.unisoldevtestwork.feature_photo_full_screen.presentation
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -65,6 +67,7 @@ import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.util
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.set_wallpapers.setWallpaperToBothScreens
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.set_wallpapers.setWallpaperToHomeScreen
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.set_wallpapers.setWallpaperToLockScreen
+import com.example.unisoldevtestwork.feature_settings.presentation.NetworkType
 import com.example.unisoldevtestwork.ui.theme.GradientBlack
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -80,7 +83,8 @@ fun FullPhotoScreen(
     favouritePhotoState: Resource<List<FavouriteEntity>>,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
-    addToDownloadedList: (DownloadedEntity) -> Unit
+    addToDownloadedList: (DownloadedEntity) -> Unit,
+    networkType: NetworkType
 ) {
     val isPhotoInFavourite = photoUrl?.let { url ->
         id?.let { entityId ->
@@ -112,7 +116,8 @@ fun FullPhotoScreen(
             scope,
             snackBarHostState,
             openDialog,
-            addToDownloadedList
+            addToDownloadedList,
+            networkType
         )
     }) {
         val radioOptions = listOf(
@@ -184,7 +189,7 @@ fun ShowInstallAlertDialog(
                                 selected = (text == selectedOption),
                                 onClick = {
                                     onOptionSelected(text)
-                                          },
+                                },
                                 role = Role.RadioButton
                             )
                             .padding(vertical = 8.dp),
@@ -307,7 +312,8 @@ fun BottomBarFullPhotoScreen(
     scope: CoroutineScope,
     snackBarHostState: SnackbarHostState,
     openDialog: MutableState<Boolean>,
-    addToDownloadedList: (DownloadedEntity) -> Unit
+    addToDownloadedList: (DownloadedEntity) -> Unit,
+    networkType: NetworkType
 ) {
     AnimatedVisibility(
         visible = bottomAppBarVisible,
@@ -355,34 +361,38 @@ fun BottomBarFullPhotoScreen(
                             tint = Color.White
                         )
                     }
-                }, label = { Text(stringResource(screen.name), color = Color.White) }, onClick = {
-                    when (screen.name) {
-                        R.string.download -> {
-                            downloadToggle(
-                                context = context,
-                                scope = scope,
-                                snackBarHostState = snackBarHostState,
-                                id = id,
-                                photoUrl = photoUrl,
-                                addToDownloaded = addToDownloadedList
-                            )
-                        }
+                },
+                    label = { Text(stringResource(screen.name), color = Color.White) },
+                    onClick = {
+                        when (screen.name) {
+                            R.string.download -> {
+                                downloadToggle(
+                                    context = context,
+                                    scope = scope,
+                                    snackBarHostState = snackBarHostState,
+                                    id = id,
+                                    photoUrl = photoUrl,
+                                    addToDownloaded = addToDownloadedList,
+                                    networkType
+                                )
+                            }
 
-                        R.string.install -> {
-                            openDialog.value = true
-                        }
+                            R.string.install -> {
+                                openDialog.value = true
+                            }
 
-                        R.string.favourite -> {
-                            toggleFavouriteStatus(
-                                photoInFavourite,
-                                id,
-                                photoUrl,
-                                addToFavourite,
-                                deleteFromFavourite
-                            )
+                            R.string.favourite -> {
+                                toggleFavouriteStatus(
+                                    photoInFavourite,
+                                    id,
+                                    photoUrl,
+                                    addToFavourite,
+                                    deleteFromFavourite
+                                )
+                            }
                         }
-                    }
-                }, selected = false
+                    },
+                    selected = false
                 )
             }
         }
@@ -395,15 +405,57 @@ fun downloadToggle(
     snackBarHostState: SnackbarHostState,
     id: String?,
     photoUrl: String?,
-    addToDownloaded: (DownloadedEntity) -> Unit
+    addToDownloaded: (DownloadedEntity) -> Unit,
+    networkType: NetworkType
 ) {
     val downloader = AndroidDownloaderImpl(context)
     if (photoUrl != null && id != null) {
-        scope.launch {
-            snackBarHostState.showSnackbar(context.getString(R.string.download_started))
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+        val isWiFiAvailable = networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+        val isMobileDataAvailable = networkCapabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
+
+        when (networkType) {
+            NetworkType.WIFI -> {
+                if (isWiFiAvailable) {
+                    scope.launch {
+                        snackBarHostState.showSnackbar(context.getString(R.string.download_started))
+                    }
+                    downloader.downloadFile(networkType, photoUrl)
+                    addToDownloaded(DownloadedEntity(id, photoUrl))
+                } else {
+                    scope.launch {
+                        snackBarHostState.showSnackbar(context.getString(R.string.error_wifi_unavailable))
+                    }
+                }
+            }
+            NetworkType.MOBILE_DATA -> {
+                if (isMobileDataAvailable) {
+                    scope.launch {
+                        snackBarHostState.showSnackbar(context.getString(R.string.download_started))
+                    }
+                    downloader.downloadFile(networkType, photoUrl)
+                    addToDownloaded(DownloadedEntity(id, photoUrl))
+                } else {
+                    scope.launch {
+                        snackBarHostState.showSnackbar(context.getString(R.string.error_mobile_data_unavailable))
+                    }
+                }
+            }
+            else -> {
+                if (isWiFiAvailable || isMobileDataAvailable) {
+                    scope.launch {
+                        snackBarHostState.showSnackbar(context.getString(R.string.download_started))
+                    }
+                    downloader.downloadFile(networkType, photoUrl)
+                    addToDownloaded(DownloadedEntity(id, photoUrl))
+                } else {
+                    scope.launch {
+                        snackBarHostState.showSnackbar(context.getString(R.string.error_network_unavailable))
+                    }
+                }
+            }
         }
-        downloader.downloadFile(photoUrl)
-        addToDownloaded(DownloadedEntity(id, photoUrl))
     } else {
         scope.launch {
             snackBarHostState.showSnackbar(context.getString(R.string.error_download_image))
@@ -477,6 +529,7 @@ fun PreviewFullPhotoScreen() {
         },
         addToDownloadedList = {
 
-        }
+        },
+        networkType = NetworkType.DEFAULT
     )
 }

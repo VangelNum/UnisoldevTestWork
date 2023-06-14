@@ -21,11 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -33,9 +30,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.unisoldevtestwork.R
-import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.DARK_THEME
-import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.LIGHT_THEME
-import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.SYSTEM_THEME
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +37,9 @@ import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstant
 fun SettingsScreen(
     settingsState: SettingsState,
     onNavigateBack: () -> Unit,
-    onUpdateTheme: (mode: String) -> Unit
+    onUpdateTheme: (mode: ThemeOption) -> Unit,
+    onUpdateQualityOfImages: (quality: QualityOption) -> Unit,
+    onUpdateNetworkType: (networkType: NetworkType) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -64,64 +60,55 @@ fun SettingsScreen(
         },
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            ThemeItem(settingsState.themeMode, onUpdateTheme)
+            ThemeItemChoice(settingsState.themeMode, onUpdateTheme)
+            QualityOfImageChoice(settingsState.qualityOfImage, onUpdateQualityOfImages)
+            NetWorkTypeChoice(settingsState.networkType, onUpdateNetworkType)
         }
     }
 }
 
+
 @Composable
-fun ThemeItem(themeMode: String, onUpdateTheme: (mode: String) -> Unit) {
+fun ThemeItemChoice(themeMode: ThemeOption, onUpdateTheme: (mode: ThemeOption) -> Unit) {
     val openAlertDialog = remember { mutableStateOf(false) }
-    ListItem(modifier = Modifier.clickable {
-        openAlertDialog.value = true
-    }, headlineContent = {
-        Text(text = stringResource(id = R.string.theme_of_application))
-    }, supportingContent = {
-        when(themeMode) {
-            SYSTEM_THEME -> {
-                Text(text = stringResource(id = R.string.apply_theme_system))
-            }
-            DARK_THEME -> {
-                Text(text = stringResource(id = R.string.dark_theme))
-            }
-            LIGHT_THEME -> {
-                Text(text = stringResource(id = R.string.light_theme))
-            }
-        }
-    })
     val radioOptions = listOf(
-        R.string.light_theme, R.string.dark_theme, R.string.apply_theme_system
+        Pair(ThemeOption.LIGHT_THEME, R.string.light_theme),
+        Pair(ThemeOption.DARK_THEME, R.string.dark_theme),
+        Pair(ThemeOption.SYSTEM_THEME, R.string.apply_theme_system)
     )
-    var selectedOption by remember { mutableIntStateOf(radioOptions[0]) }
+    val selectedOption = remember { mutableStateOf(themeMode) }
+
+    ListItem(
+        modifier = Modifier.clickable { openAlertDialog.value = true },
+        headlineContent = { Text(text = stringResource(id = R.string.theme_of_application)) },
+        supportingContent = {
+            Text(text = stringResource(id = radioOptions.find {
+                it.first == themeMode
+            }?.second ?: R.string.theme_of_application))
+        }
+    )
+
     if (openAlertDialog.value) {
         AlertDialog(
-            onDismissRequest = {
-                openAlertDialog.value = false
-            },
-            title = {
-                Text(text = stringResource(id = R.string.theme_of_application))
-            },
+            onDismissRequest = { openAlertDialog.value = false },
+            title = { Text(text = stringResource(id = R.string.theme_of_application)) },
             text = {
                 Column(Modifier.selectableGroup()) {
-                    radioOptions.forEach { text ->
+                    radioOptions.forEach { (option, textRes) ->
                         Row(
                             Modifier
                                 .fillMaxWidth()
                                 .selectable(
-                                    selected = text == selectedOption,
-                                    onClick = {
-                                        selectedOption = text
-                                    },
+                                    selected = option == selectedOption.value,
+                                    onClick = { selectedOption.value = option },
                                     role = Role.RadioButton
                                 )
                                 .padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RadioButton(
-                                selected = (text == selectedOption), onClick = null
-                            )
+                            RadioButton(selected = option == selectedOption.value, onClick = null)
                             Text(
-                                text = stringResource(id = text),
+                                text = stringResource(id = textRes),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 16.dp)
                             )
@@ -132,41 +119,180 @@ fun ThemeItem(themeMode: String, onUpdateTheme: (mode: String) -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     openAlertDialog.value = false
-                    when (selectedOption) {
-                        R.string.light_theme -> {
-                            onUpdateTheme(LIGHT_THEME)
-                        }
-
-                        R.string.dark_theme -> {
-                            onUpdateTheme(DARK_THEME)
-                        }
-
-                        R.string.apply_theme_system -> {
-                            onUpdateTheme(SYSTEM_THEME)
-                        }
-                    }
+                    onUpdateTheme(selectedOption.value)
                 }) {
                     Text(stringResource(id = R.string.ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    openAlertDialog.value = false
-                }) {
+                TextButton(onClick = { openAlertDialog.value = false }) {
                     Text(stringResource(id = R.string.cancel))
                 }
             }
         )
     }
-
 }
+
+
+@Composable
+fun QualityOfImageChoice(
+    qualityOfImage: QualityOption,
+    onUpdateQualityOfImages: (quality: QualityOption) -> Unit
+) {
+    val openAlertDialog = remember { mutableStateOf(false) }
+    val radioOptions = listOf(
+        Pair(QualityOption.WITHOUT_COMPRESSION, R.string.high_quality_of_image),
+        Pair(QualityOption.WITH_COMPRESSION_75, R.string.small_compression),
+        Pair(QualityOption.SMALL_IMAGE_WITH_COMPRESSION_75, R.string.high_compression)
+    )
+    val selectedOption = remember { mutableStateOf(qualityOfImage) }
+
+    ListItem(
+        modifier = Modifier.clickable { openAlertDialog.value = true },
+        headlineContent = { Text(text = stringResource(id = R.string.quality_of_images)) },
+        supportingContent = {
+            Text(
+                text = stringResource(
+                    id = radioOptions.find { it.first == qualityOfImage }?.second
+                        ?: R.string.quality_of_images
+                )
+            )
+        }
+    )
+
+    if (openAlertDialog.value) {
+        AlertDialog(
+            onDismissRequest = { openAlertDialog.value = false },
+            title = { Text(text = stringResource(id = R.string.quality_of_images)) },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    radioOptions.forEach { (option, textRes) ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = option == selectedOption.value,
+                                    onClick = { selectedOption.value = option },
+                                    role = Role.RadioButton
+                                )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = option == selectedOption.value, onClick = null)
+                            Text(
+                                text = stringResource(id = textRes),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    openAlertDialog.value = false
+                    onUpdateQualityOfImages(selectedOption.value)
+                }) {
+                    Text(stringResource(id = R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { openAlertDialog.value = false }) {
+                    Text(stringResource(id = R.string.cancel))
+                }
+            }
+        )
+    }
+}
+
+
+@Composable
+fun NetWorkTypeChoice(
+    networkType: NetworkType,
+    onUpdateNetworkType: (networkType: NetworkType) -> Unit
+) {
+    val openAlertDialog = remember { mutableStateOf(false) }
+    val radioOptions = listOf(
+        Pair(NetworkType.DEFAULT, R.string.download_both),
+        Pair(NetworkType.WIFI, R.string.download_with_wifi),
+        Pair(NetworkType.MOBILE_DATA, R.string.download_with_mobile_internet)
+    )
+    val selectedOption = remember { mutableStateOf(networkType) }
+
+    ListItem(
+        modifier = Modifier.clickable { openAlertDialog.value = true },
+        headlineContent = { Text(text = stringResource(id = R.string.download_image_using)) },
+        supportingContent = {
+            Text(
+                text = stringResource(
+                    id = radioOptions.find { it.first == networkType }?.second ?: 0
+                )
+            )
+        }
+    )
+
+    if (openAlertDialog.value) {
+        AlertDialog(
+            onDismissRequest = { openAlertDialog.value = false },
+            title = { Text(text = stringResource(id = R.string.download_image_using)) },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    radioOptions.forEach { (option, textRes) ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = option == selectedOption.value,
+                                    onClick = { selectedOption.value = option },
+                                    role = Role.RadioButton
+                                )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = option == selectedOption.value, onClick = null)
+                            Text(
+                                text = stringResource(id = textRes),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    openAlertDialog.value = false
+                    onUpdateNetworkType(selectedOption.value)
+                }) {
+                    Text(stringResource(id = R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { openAlertDialog.value = false }) {
+                    Text(stringResource(id = R.string.cancel))
+                }
+            }
+        )
+    }
+}
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun PreviewSettingsScreen() {
     SettingsScreen(
-        settingsState = SettingsState(""),
+        settingsState = SettingsState(
+            ThemeOption.DARK_THEME,
+            QualityOption.WITHOUT_COMPRESSION,
+            NetworkType.DEFAULT
+        ),
         onNavigateBack = {},
-        onUpdateTheme = {}
+        onUpdateTheme = {},
+        onUpdateQualityOfImages = {
+
+        },
+        onUpdateNetworkType = {
+
+        }
     )
 }

@@ -11,7 +11,9 @@ class DownloadCompleteReceiver : BroadcastReceiver() {
         if (intent?.action == "android.intent.action.DOWNLOAD_COMPLETE") {
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
             if (id != -1L) {
-                Log.d("errorState", "Download with ID $id finished")
+                Log.d("downloadState", "Download with ID $id finished")
+            } else {
+                Log.d("downloadState","Download with ID $id finished with error")
             }
         }
     }

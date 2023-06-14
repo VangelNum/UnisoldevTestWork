@@ -29,6 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -51,6 +54,7 @@ import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.Pr
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.ResultDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.UrlsDto
 import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.UserDto
+import com.example.unisoldevtestwork.feature_settings.presentation.QualityOption
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +66,7 @@ fun ListPhotosInCategoryScreen(
     onNavigateToWatchPhoto: (String, String) -> Unit,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
+    qualityOfImages: QualityOption
 ) {
     Scaffold(
         topBar = {
@@ -107,7 +112,8 @@ fun ListPhotosInCategoryScreen(
                     favouriteState.data ?: emptyList(),
                     onNavigateToWatchPhoto,
                     addToFavourite,
-                    deleteFromFavourite
+                    deleteFromFavourite,
+                    qualityOfImages
                 )
             }
         }
@@ -123,6 +129,7 @@ private fun ShowPhotosGrid(
     onNavigateToWatchPhoto: (String, String) -> Unit,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
+    qualityOfImages: QualityOption
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(128.dp),
@@ -132,13 +139,13 @@ private fun ShowPhotosGrid(
         modifier = Modifier.padding(innerPadding)
     ) {
         items(photos) { photo ->
-
             ShowPhotoItem(
                 photo,
                 favourites,
                 onNavigateToWatchPhoto,
                 addToFavourite,
-                deleteFromFavourite
+                deleteFromFavourite,
+                qualityOfImages
             )
         }
     }
@@ -151,9 +158,24 @@ private fun ShowPhotoItem(
     onNavigateToWatchPhoto: (String, String) -> Unit,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
+    qualityOfImages: QualityOption,
 ) {
+    var photoQuality by remember {
+        mutableStateOf(photo.urls.raw)
+    }
+    photoQuality = when (qualityOfImages) {
+        QualityOption.WITHOUT_COMPRESSION -> {
+            photo.urls.full
+        }
+        QualityOption.WITH_COMPRESSION_75 -> {
+            photo.urls.regular
+        }
+        QualityOption.SMALL_IMAGE_WITH_COMPRESSION_75 -> {
+            photo.urls.small
+        }
+    }
     Card(shape = MaterialTheme.shapes.large, modifier = Modifier.clickable {
-        onNavigateToWatchPhoto(photo.id, photo.urls.regular)
+        onNavigateToWatchPhoto(photo.id, photoQuality)
     }) {
         Box(
             modifier = Modifier
@@ -161,7 +183,7 @@ private fun ShowPhotoItem(
                 .height(300.dp)
         ) {
             SubcomposeAsyncImage(
-                model = photo.urls.regular,
+                model = photoQuality,
                 contentScale = ContentScale.Crop,
                 loading = {
                     ShowImageLoading()
@@ -328,6 +350,7 @@ fun PreviewListPhotosInCategoryScreen() {
                 FavouriteEntity("0", "0"),
                 FavouriteEntity("0", "0")
             )
-        )
+        ),
+        qualityOfImages = QualityOption.WITHOUT_COMPRESSION
     )
 }

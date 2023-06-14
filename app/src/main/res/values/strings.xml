@@ -37,4 +37,16 @@
     <string name="light_theme">Светлая</string>
     <string name="dark_theme">Темная</string>
     <string name="apply_theme_system">Согласно системным настройкам</string>
+    <string name="cat">Cat</string>
+    <string name="quality_of_images">Качество изображений</string>
+    <string name="high_quality_of_image">Высокое качество</string>
+    <string name="small_compression">Небольшое сжатие</string>
+    <string name="high_compression">Сильное сжатие</string>
+    <string name="download_both">Wi-Fi и мобильный интернет</string>
+    <string name="download_with_wifi">Wi-Fi</string>
+    <string name="download_with_mobile_internet">Мобильный интернет</string>
+    <string name="download_image_using">Загрузка изображения с помощью</string>
+    <string name="error_wifi_unavailable">Подключитесь к Wi-Fi и повторите попытку или отключите эту опцию в настройках.</string>
+    <string name="error_mobile_data_unavailable">Подключитесь к мобильному интернету и повторите попытку или отключите эту опцию в настройках.</string>
+    <string name="error_network_unavailable">Ошибка, нет интернета</string>
 </resources>

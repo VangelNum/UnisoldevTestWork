@@ -25,7 +25,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.unisoldevtestwork.core.common.Resource
-import com.example.unisoldevtestwork.core.presentation.PhotosViewModel
 import com.example.unisoldevtestwork.core.presentation.Screens
 import com.example.unisoldevtestwork.core.presentation.drawer_layout.AppDrawerContent
 import com.example.unisoldevtestwork.feature_category.presentation.CategoryPhotosScreen
@@ -34,13 +33,11 @@ import com.example.unisoldevtestwork.feature_downloaded.presentation.DownloadedP
 import com.example.unisoldevtestwork.feature_favourite.presentation.FavouritePhotosScreen
 import com.example.unisoldevtestwork.feature_favourite.presentation.FavouriteViewModel
 import com.example.unisoldevtestwork.feature_list_photos_in_category.presentation.ListPhotosInCategoryScreen
+import com.example.unisoldevtestwork.feature_list_photos_in_category.presentation.PhotosViewModel
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.FullPhotoScreen
 import com.example.unisoldevtestwork.feature_settings.presentation.SettingsScreen
-import com.example.unisoldevtestwork.feature_settings.presentation.SettingsState
 import com.example.unisoldevtestwork.feature_settings.presentation.SettingsViewModel
-import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.DARK_THEME
-import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.LIGHT_THEME
-import com.example.unisoldevtestwork.feature_settings.presentation.ThemeConstants.SYSTEM_THEME
+import com.example.unisoldevtestwork.feature_settings.presentation.ThemeOption
 import com.example.unisoldevtestwork.ui.theme.UnisoldevTestWorkTheme
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
@@ -65,11 +62,12 @@ class MainActivity : ComponentActivity() {
             val downloadedViewModel = hiltViewModel<DownloadedPhotoViewModel>()
             val settingsViewModel = hiltViewModel<SettingsViewModel>()
             val settingsState = settingsViewModel.settingsState.collectAsStateWithLifecycle().value
-            val favouriteState = favouriteViewModel.favouriteState.collectAsStateWithLifecycle().value
+            val favouriteState =
+                favouriteViewModel.favouriteState.collectAsStateWithLifecycle().value
             val scope = rememberCoroutineScope()
-            val appTheme = getThemeFromSettings(settingsState)
+            val appTheme = getThemeFromSettings(settingsState.themeMode)
             val systemUiController = rememberSystemUiController()
-            SystemBarColors(settingsState, systemUiController)
+            SystemBarColors(settingsState.themeMode, systemUiController)
             UnisoldevTestWorkTheme(
                 useDarkTheme = appTheme
             ) {
@@ -130,8 +128,7 @@ class MainActivity : ComponentActivity() {
                                     photosViewModel.getPhotosByCategory(
                                         category = category ?: "animal"
                                     )
-                                    val photosState =
-                                        photosViewModel.photosState.collectAsStateWithLifecycle().value
+                                    val photosState = photosViewModel.photosState.collectAsStateWithLifecycle().value
                                     ListPhotosInCategoryScreen(
                                         category = category,
                                         photosState = photosState,
@@ -151,7 +148,8 @@ class MainActivity : ComponentActivity() {
                                         },
                                         deleteFromFavourite = { photo ->
                                             favouriteViewModel.deletePhoto(photo)
-                                        }
+                                        },
+                                        qualityOfImages = settingsState.qualityOfImage
                                     )
                                 }
                                 composable(Screens.FullScreenPhoto.route + "/{photoUrl}/{id}",
@@ -177,7 +175,7 @@ class MainActivity : ComponentActivity() {
                                         favouriteViewModel.deletePhoto(it)
                                     }, addToDownloadedList = {
                                         downloadedViewModel.addToDownloadedList(it)
-                                    })
+                                    }, networkType = settingsState.networkType)
                                 }
                                 composable(Screens.FavouritePhotos.route) {
                                     FavouritePhotosScreen(
@@ -229,11 +227,17 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable(Screens.SettingsScreen.route) {
-                                    SettingsScreen(settingsState, onNavigateBack = {
-                                        navController.popBackStack()
-                                    }, onUpdateTheme = {
-                                        settingsViewModel.setTheme(it)
-                                    })
+                                    SettingsScreen(
+                                        settingsState, onNavigateBack = {
+                                            navController.popBackStack()
+                                        }, onUpdateTheme = {
+                                            settingsViewModel.setTheme(it)
+                                        }, onUpdateQualityOfImages = {
+                                            settingsViewModel.setQualityOfImage(it)
+                                        }, onUpdateNetworkType = {
+                                            settingsViewModel.setNetworkType(it)
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -246,31 +250,38 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun getThemeFromSettings(settingsState: SettingsState): Boolean {
-    return when (settingsState.themeMode) {
-        LIGHT_THEME -> false
-        DARK_THEME -> true
-        SYSTEM_THEME -> isSystemInDarkTheme()
-        else -> isSystemInDarkTheme()
+private fun getThemeFromSettings(settingsState: ThemeOption): Boolean {
+    return when (settingsState) {
+        ThemeOption.DARK_THEME -> {
+            true
+        }
+
+        ThemeOption.LIGHT_THEME -> {
+            false
+        }
+
+        ThemeOption.SYSTEM_THEME -> {
+            isSystemInDarkTheme()
+        }
     }
 }
 
 @Composable
 private fun SystemBarColors(
-    settingsState: SettingsState,
+    settingsState: ThemeOption,
     systemUiController: SystemUiController
 ) {
-    when (settingsState.themeMode) {
-        LIGHT_THEME -> {
+    when (settingsState) {
+        ThemeOption.LIGHT_THEME -> {
             systemUiController.setStatusBarColor(darkIcons = true, color = Color.White)
             systemUiController.setNavigationBarColor(color = MaterialTheme.colorScheme.tertiaryContainer)
         }
 
-        DARK_THEME -> {
+        ThemeOption.DARK_THEME -> {
             systemUiController.setSystemBarsColor(color = Color.Black)
         }
 
-        else -> {
+        ThemeOption.SYSTEM_THEME -> {
             if (isSystemInDarkTheme()) {
                 systemUiController.setSystemBarsColor(color = Color.Black)
             } else {

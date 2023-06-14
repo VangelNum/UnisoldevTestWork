@@ -1,4 +1,4 @@
-package com.example.unisoldevtestwork.core.presentation
+package com.example.unisoldevtestwork.feature_list_photos_in_category.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

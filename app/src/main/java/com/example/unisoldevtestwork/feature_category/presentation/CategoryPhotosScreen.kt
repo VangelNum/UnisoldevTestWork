@@ -51,7 +51,7 @@ fun CategoryPhotosScreen(
         CollectionItems(R.drawable.cartoon, R.string.cartoon),
         CollectionItems(R.drawable.city, R.string.city),
         CollectionItems(R.drawable.colorful, R.string.colorful),
-        CollectionItems(R.drawable.horror, R.string.horror),
+        CollectionItems(R.drawable.cat, R.string.cat),
         CollectionItems(R.drawable.flower, R.string.flower),
         CollectionItems(R.drawable.food, R.string.food)
     )
