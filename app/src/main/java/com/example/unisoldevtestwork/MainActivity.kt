@@ -16,7 +16,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,7 +24,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.example.unisoldevtestwork.core.common.Resource
 import com.example.unisoldevtestwork.core.presentation.Screens
 import com.example.unisoldevtestwork.core.presentation.drawer_layout.AppDrawerContent
 import com.example.unisoldevtestwork.feature_category.presentation.CategoryPhotosScreen
@@ -61,7 +59,6 @@ class MainActivity : ComponentActivity() {
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val navController = rememberAnimatedNavController()
             val favouriteViewModel = hiltViewModel<FavouriteViewModel>()
-            val downloadedViewModel = hiltViewModel<DownloadedPhotoViewModel>()
             val settingsViewModel = hiltViewModel<SettingsViewModel>()
             val settingsState = settingsViewModel.settingsState.collectAsStateWithLifecycle().value
             val favouriteState = favouriteViewModel.favouriteState.collectAsStateWithLifecycle().value
@@ -216,12 +213,8 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable(Screens.DownloadedPhotos.route) {
+                                    val downloadedViewModel = hiltViewModel<DownloadedPhotoViewModel>()
                                     val downloadedState = downloadedViewModel.downloadPhotosState.collectAsStateWithLifecycle().value
-                                    LaunchedEffect(key1 = Unit) {
-                                        if (downloadedState !is Resource.Success) {
-                                            downloadedViewModel.getDownloadedPhotos()
-                                        }
-                                    }
                                     DownloadedPhotosScreen(
                                         navController = navController,
                                         downloadedState = downloadedState,

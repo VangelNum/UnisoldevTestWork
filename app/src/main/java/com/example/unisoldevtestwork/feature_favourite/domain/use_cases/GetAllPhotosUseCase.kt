@@ -4,9 +4,8 @@ import com.example.unisoldevtestwork.core.common.Resource
 import com.example.unisoldevtestwork.feature_favourite.data.model.FavouriteEntity
 import com.example.unisoldevtestwork.feature_favourite.domain.repository.FavouriteRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
 
-class GetAllPhotosUseCase @Inject constructor(
+class GetAllPhotosUseCase(
     private val repository: FavouriteRepository
 ) {
     operator fun invoke(): Flow<Resource<List<FavouriteEntity>>> {

@@ -7,9 +7,8 @@ import com.example.unisoldevtestwork.feature_list_photos_in_category.domain.data
 import com.example.unisoldevtestwork.feature_list_photos_in_category.domain.repository.ListPhotosCategoryRepository
 import com.example.unisoldevtestwork.feature_list_photos_in_category.presentation.PhotosPagingSource
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
 
-class GetPhotosByCategoryUseCase @Inject constructor(
+class GetPhotosByCategoryUseCase(
     private val repository: ListPhotosCategoryRepository
 ) {
     operator fun invoke(category: String): Flow<PagingData<Result>> {

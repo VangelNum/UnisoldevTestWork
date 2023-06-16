@@ -21,7 +21,11 @@ class DownloadedPhotoViewModel @Inject constructor(
     private val _downloadPhotosState: MutableStateFlow<Resource<List<DownloadedEntity>>> = MutableStateFlow(Resource.Loading())
     val downloadPhotosState: StateFlow<Resource<List<DownloadedEntity>>> = _downloadPhotosState.asStateFlow()
 
-    fun getDownloadedPhotos() {
+    init {
+        getDownloadedPhotos()
+    }
+
+    private fun getDownloadedPhotos() {
         downloadedUseCase.getAllDownloadedPhotosUseCase().onEach {
             _downloadPhotosState.value = it
         }.launchIn(viewModelScope)
