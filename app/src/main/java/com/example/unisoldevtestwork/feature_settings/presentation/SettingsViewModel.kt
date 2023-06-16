@@ -16,8 +16,8 @@ class SettingsViewModel @Inject constructor(
 
     private val _settingsState = MutableStateFlow(
         SettingsState(
-            themeMode = ThemeOption.SYSTEM_THEME,
-            qualityOfImage = QualityOption.WITH_COMPRESSION_75,
+            themeMode = ThemeType.SYSTEM_THEME,
+            qualityOfImage = QualityType.WITH_COMPRESSION_75,
             networkType = NetworkType.DEFAULT
         )
     )
@@ -38,7 +38,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setQualityOfImage(qualityOfImage: QualityOption) {
+    fun setQualityOfImage(qualityOfImage: QualityType) {
         viewModelScope.launch {
             settingsRepository.setQualityOfImage(qualityOfImage)
             _settingsState.value = _settingsState.value.copy(
@@ -56,7 +56,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setTheme(mode: ThemeOption) {
+    fun setTheme(mode: ThemeType) {
         viewModelScope.launch {
             settingsRepository.setTheme(mode)
             _settingsState.value = _settingsState.value.copy(

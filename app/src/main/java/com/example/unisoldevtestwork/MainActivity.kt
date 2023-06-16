@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.unisoldevtestwork.core.common.Resource
 import com.example.unisoldevtestwork.core.presentation.Screens
 import com.example.unisoldevtestwork.core.presentation.drawer_layout.AppDrawerContent
@@ -38,7 +39,7 @@ import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.Full
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.FullPhotoViewModel
 import com.example.unisoldevtestwork.feature_settings.presentation.SettingsScreen
 import com.example.unisoldevtestwork.feature_settings.presentation.SettingsViewModel
-import com.example.unisoldevtestwork.feature_settings.presentation.ThemeOption
+import com.example.unisoldevtestwork.feature_settings.presentation.ThemeType
 import com.example.unisoldevtestwork.ui.theme.UnisoldevTestWorkTheme
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
@@ -128,7 +129,7 @@ class MainActivity : ComponentActivity() {
                                     photosViewModel.getPhotosByCategory(
                                         category = category ?: "animal"
                                     )
-                                    val photosState = photosViewModel.photosState.collectAsStateWithLifecycle().value
+                                    val photosState = photosViewModel.photosState.collectAsLazyPagingItems()
                                     ListPhotosInCategoryScreen(
                                         category = category,
                                         photosState = photosState,
@@ -215,8 +216,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable(Screens.DownloadedPhotos.route) {
-                                    val downloadedState =
-                                        downloadedViewModel.downloadPhotosState.collectAsStateWithLifecycle().value
+                                    val downloadedState = downloadedViewModel.downloadPhotosState.collectAsStateWithLifecycle().value
                                     LaunchedEffect(key1 = Unit) {
                                         if (downloadedState !is Resource.Success) {
                                             downloadedViewModel.getDownloadedPhotos()
@@ -266,17 +266,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun getThemeFromSettings(settingsState: ThemeOption): Boolean {
+private fun getThemeFromSettings(settingsState: ThemeType): Boolean {
     return when (settingsState) {
-        ThemeOption.DARK_THEME -> {
+        ThemeType.DARK_THEME -> {
             true
         }
 
-        ThemeOption.LIGHT_THEME -> {
+        ThemeType.LIGHT_THEME -> {
             false
         }
 
-        ThemeOption.SYSTEM_THEME -> {
+        ThemeType.SYSTEM_THEME -> {
             isSystemInDarkTheme()
         }
     }
@@ -284,20 +284,20 @@ private fun getThemeFromSettings(settingsState: ThemeOption): Boolean {
 
 @Composable
 private fun SystemBarColors(
-    settingsState: ThemeOption,
+    settingsState: ThemeType,
     systemUiController: SystemUiController
 ) {
     when (settingsState) {
-        ThemeOption.LIGHT_THEME -> {
+        ThemeType.LIGHT_THEME -> {
             systemUiController.setStatusBarColor(darkIcons = true, color = Color.White)
             systemUiController.setNavigationBarColor(color = MaterialTheme.colorScheme.tertiaryContainer)
         }
 
-        ThemeOption.DARK_THEME -> {
+        ThemeType.DARK_THEME -> {
             systemUiController.setSystemBarsColor(color = Color.Black)
         }
 
-        ThemeOption.SYSTEM_THEME -> {
+        ThemeType.SYSTEM_THEME -> {
             if (isSystemInDarkTheme()) {
                 systemUiController.setSystemBarsColor(color = Color.Black)
             } else {

@@ -2,33 +2,36 @@ package com.example.unisoldevtestwork.feature_list_photos_in_category.presentati
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.unisoldevtestwork.core.common.Resource
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.CategoryItemsDto
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.example.unisoldevtestwork.feature_list_photos_in_category.domain.data.Result
 import com.example.unisoldevtestwork.feature_list_photos_in_category.domain.use_cases.GetPhotosByCategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class PhotosViewModel @Inject constructor(
     private val getPhotosByCategoryUseCase: GetPhotosByCategoryUseCase
 ) : ViewModel() {
-    private val _photosState: MutableStateFlow<Resource<CategoryItemsDto>> = MutableStateFlow(Resource.Loading())
+    private val _photosState: MutableStateFlow<PagingData<Result>> = MutableStateFlow(PagingData.empty())
     val photosState = _photosState.asStateFlow()
 
+    private var currentCategory: String? = null
 
-    private var previousCategory: String? = null
     fun getPhotosByCategory(category: String) {
-        if (category == previousCategory) {
+        if (category == currentCategory) {
             return
         }
-        previousCategory = category
-
-        getPhotosByCategoryUseCase(category).onEach { response ->
-            _photosState.value = response
-        }.launchIn(viewModelScope)
+        currentCategory = category
+        val newPhotos = getPhotosByCategoryUseCase(category).cachedIn(viewModelScope)
+        viewModelScope.launch {
+            newPhotos.collectLatest { pagingData ->
+                _photosState.value = pagingData
+            }
+        }
     }
 }

@@ -37,8 +37,8 @@ import com.example.unisoldevtestwork.R
 fun SettingsScreen(
     settingsState: SettingsState,
     onNavigateBack: () -> Unit,
-    onUpdateTheme: (mode: ThemeOption) -> Unit,
-    onUpdateQualityOfImages: (quality: QualityOption) -> Unit,
+    onUpdateTheme: (mode: ThemeType) -> Unit,
+    onUpdateQualityOfImages: (quality: QualityType) -> Unit,
     onUpdateNetworkType: (networkType: NetworkType) -> Unit
 ) {
     Scaffold(
@@ -69,12 +69,12 @@ fun SettingsScreen(
 
 
 @Composable
-fun ThemeItemChoice(themeMode: ThemeOption, onUpdateTheme: (mode: ThemeOption) -> Unit) {
+fun ThemeItemChoice(themeMode: ThemeType, onUpdateTheme: (mode: ThemeType) -> Unit) {
     val openAlertDialog = remember { mutableStateOf(false) }
     val radioOptions = listOf(
-        Pair(ThemeOption.LIGHT_THEME, R.string.light_theme),
-        Pair(ThemeOption.DARK_THEME, R.string.dark_theme),
-        Pair(ThemeOption.SYSTEM_THEME, R.string.apply_theme_system)
+        Pair(ThemeType.LIGHT_THEME, R.string.light_theme),
+        Pair(ThemeType.DARK_THEME, R.string.dark_theme),
+        Pair(ThemeType.SYSTEM_THEME, R.string.apply_theme_system)
     )
     val selectedOption = remember { mutableStateOf(themeMode) }
 
@@ -136,14 +136,14 @@ fun ThemeItemChoice(themeMode: ThemeOption, onUpdateTheme: (mode: ThemeOption) -
 
 @Composable
 fun QualityOfImageChoice(
-    qualityOfImage: QualityOption,
-    onUpdateQualityOfImages: (quality: QualityOption) -> Unit
+    qualityOfImage: QualityType,
+    onUpdateQualityOfImages: (quality: QualityType) -> Unit
 ) {
     val openAlertDialog = remember { mutableStateOf(false) }
     val radioOptions = listOf(
-        Pair(QualityOption.WITHOUT_COMPRESSION, R.string.high_quality_of_image),
-        Pair(QualityOption.WITH_COMPRESSION_75, R.string.small_compression),
-        Pair(QualityOption.SMALL_IMAGE_WITH_COMPRESSION_75, R.string.high_compression)
+        Pair(QualityType.WITHOUT_COMPRESSION, R.string.high_quality_of_image),
+        Pair(QualityType.WITH_COMPRESSION_75, R.string.small_compression),
+        Pair(QualityType.SMALL_IMAGE_WITH_COMPRESSION_75, R.string.high_compression)
     )
     val selectedOption = remember { mutableStateOf(qualityOfImage) }
 
@@ -282,8 +282,8 @@ fun NetWorkTypeChoice(
 fun PreviewSettingsScreen() {
     SettingsScreen(
         settingsState = SettingsState(
-            ThemeOption.DARK_THEME,
-            QualityOption.WITHOUT_COMPRESSION,
+            ThemeType.DARK_THEME,
+            QualityType.WITHOUT_COMPRESSION,
             NetworkType.DEFAULT
         ),
         onNavigateBack = {},

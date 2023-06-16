@@ -49,4 +49,5 @@
     <string name="error_wifi_unavailable">Подключитесь к Wi-Fi и повторите попытку или отключите эту опцию в настройках.</string>
     <string name="error_mobile_data_unavailable">Подключитесь к мобильному интернету и повторите попытку или отключите эту опцию в настройках.</string>
     <string name="error_network_unavailable">Ошибка, нет интернета</string>
+    <string name="error_append">Ошибка подзагрузки</string>
 </resources>

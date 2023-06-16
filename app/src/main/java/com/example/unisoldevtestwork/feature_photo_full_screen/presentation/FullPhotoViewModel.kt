@@ -13,6 +13,7 @@ import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.util
 import com.example.unisoldevtestwork.feature_photo_full_screen.presentation.utils.text_helper.UiText
 import com.example.unisoldevtestwork.feature_settings.presentation.NetworkType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -106,21 +107,21 @@ class FullPhotoViewModel @Inject constructor(
 
 
     private fun setWallpaperToHomeScreen(photoUrl: String?) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val response = setWallpaperRepository.setWallpaperToHomeScreen(photoUrl)
             _fullPhotoSetWallpaperChannel.send(response)
         }
     }
 
     private fun setWallpaperToLockScreen(photoUrl: String?) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val response = setWallpaperRepository.setWallpaperToLockScreen(photoUrl)
             _fullPhotoSetWallpaperChannel.send(response)
         }
     }
 
     private fun setWallpaperToBothScreens(photoUrl: String?) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val response = setWallpaperRepository.setWallpaperToBothScreens(photoUrl)
             _fullPhotoSetWallpaperChannel.send(response)
         }

@@ -6,8 +6,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.unisoldevtestwork.feature_settings.domain.repository.SettingsRepository
 import com.example.unisoldevtestwork.feature_settings.presentation.NetworkType
-import com.example.unisoldevtestwork.feature_settings.presentation.QualityOption
-import com.example.unisoldevtestwork.feature_settings.presentation.ThemeOption
+import com.example.unisoldevtestwork.feature_settings.presentation.QualityType
+import com.example.unisoldevtestwork.feature_settings.presentation.ThemeType
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
@@ -21,36 +21,36 @@ class SettingsRepositoryImpl @Inject constructor(
         private val CURRENT_NETWORK_TYPE = stringPreferencesKey("network_type")
     }
 
-    override suspend fun setTheme(mode: ThemeOption) {
+    override suspend fun setTheme(mode: ThemeType) {
         dataStore.edit { preferences ->
             preferences[CURRENT_MODE] = mode.name
         }
     }
 
-    override suspend fun getTheme(): ThemeOption {
+    override suspend fun getTheme(): ThemeType {
         val preferences = dataStore.data.first()
-        val themeValue = preferences[CURRENT_MODE] ?: ThemeOption.SYSTEM_THEME.name
+        val themeValue = preferences[CURRENT_MODE] ?: ThemeType.SYSTEM_THEME.name
         return when (themeValue) {
-            ThemeOption.LIGHT_THEME.name -> ThemeOption.LIGHT_THEME
-            ThemeOption.DARK_THEME.name -> ThemeOption.DARK_THEME
-            else -> ThemeOption.SYSTEM_THEME
+            ThemeType.LIGHT_THEME.name -> ThemeType.LIGHT_THEME
+            ThemeType.DARK_THEME.name -> ThemeType.DARK_THEME
+            else -> ThemeType.SYSTEM_THEME
         }
     }
 
-    override suspend fun setQualityOfImage(qualityOfImage: QualityOption) {
+    override suspend fun setQualityOfImage(qualityOfImage: QualityType) {
         dataStore.edit { preferences ->
             preferences[CURRENT_QUALITY_OF_IMAGE] = qualityOfImage.name
         }
     }
 
-    override suspend fun getQualityOfImage(): QualityOption {
+    override suspend fun getQualityOfImage(): QualityType {
         val preferences = dataStore.data.first()
-        val quality = preferences[CURRENT_QUALITY_OF_IMAGE] ?: QualityOption.WITH_COMPRESSION_75.name
+        val quality = preferences[CURRENT_QUALITY_OF_IMAGE] ?: QualityType.WITH_COMPRESSION_75.name
         return when (quality) {
-            QualityOption.WITH_COMPRESSION_75.name -> QualityOption.WITH_COMPRESSION_75
-            QualityOption.SMALL_IMAGE_WITH_COMPRESSION_75.name -> QualityOption.SMALL_IMAGE_WITH_COMPRESSION_75
+            QualityType.WITH_COMPRESSION_75.name -> QualityType.WITH_COMPRESSION_75
+            QualityType.SMALL_IMAGE_WITH_COMPRESSION_75.name -> QualityType.SMALL_IMAGE_WITH_COMPRESSION_75
             else -> {
-                QualityOption.WITHOUT_COMPRESSION
+                QualityType.WITHOUT_COMPRESSION
             }
         }
     }

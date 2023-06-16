@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -40,6 +40,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.SubcomposeAsyncImage
 import com.example.unisoldevtestwork.R
 import com.example.unisoldevtestwork.core.common.Resource
@@ -47,26 +51,22 @@ import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowE
 import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowGradientBelow
 import com.example.unisoldevtestwork.core.presentation.composableTemplates.ShowLoadingScreen
 import com.example.unisoldevtestwork.feature_favourite.data.model.FavouriteEntity
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.CategoryItemsDto
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.LinksDto
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.LinksXDto
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.ProfileImageDto
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.ResultDto
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.UrlsDto
-import com.example.unisoldevtestwork.feature_list_photos_in_category.data.dto.UserDto
-import com.example.unisoldevtestwork.feature_settings.presentation.QualityOption
+import com.example.unisoldevtestwork.feature_list_photos_in_category.domain.data.Result
+import com.example.unisoldevtestwork.feature_list_photos_in_category.domain.data.Urls
+import com.example.unisoldevtestwork.feature_settings.presentation.QualityType
+import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListPhotosInCategoryScreen(
     category: String?,
-    photosState: Resource<CategoryItemsDto>,
+    photosState: LazyPagingItems<Result>,
     favouriteState: Resource<List<FavouriteEntity>>,
     onNavigateToBack: () -> Unit,
     onNavigateToWatchPhoto: (String, String) -> Unit,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
-    qualityOfImages: QualityOption
+    qualityOfImages: QualityType
 ) {
     Scaffold(
         topBar = {
@@ -87,8 +87,8 @@ fun ListPhotosInCategoryScreen(
             )
         }
     ) { innerPadding ->
-        when (photosState) {
-            is Resource.Loading -> {
+        when (photosState.loadState.refresh) {
+            is LoadState.Loading -> {
                 ShowLoadingScreen(
                     modifier = Modifier
                         .fillMaxSize()
@@ -96,24 +96,25 @@ fun ListPhotosInCategoryScreen(
                 )
             }
 
-            is Resource.Error -> {
+            is LoadState.Error -> {
                 ShowErrorScreen(
-                    photosState.message,
+                    photosState.loadState.refresh.toString(),
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
                 )
             }
 
-            is Resource.Success -> {
+            else -> {
                 ShowPhotosGrid(
-                    innerPadding,
-                    photosState.data?.results ?: emptyList(),
-                    favouriteState.data ?: emptyList(),
-                    onNavigateToWatchPhoto,
-                    addToFavourite,
-                    deleteFromFavourite,
-                    qualityOfImages
+                    innerPadding = innerPadding,
+                    photoState = photosState,
+                    favourites = favouriteState.data ?: emptyList(),
+                    onNavigateToWatchPhoto = onNavigateToWatchPhoto,
+                    addToFavourite = addToFavourite,
+                    deleteFromFavourite = deleteFromFavourite,
+                    qualityOfImages = qualityOfImages,
+                    appendState = photosState.loadState.append
                 )
             }
         }
@@ -124,12 +125,13 @@ fun ListPhotosInCategoryScreen(
 @Composable
 private fun ShowPhotosGrid(
     innerPadding: PaddingValues,
-    photos: List<ResultDto>,
+    photoState: LazyPagingItems<Result>,
     favourites: List<FavouriteEntity>,
     onNavigateToWatchPhoto: (String, String) -> Unit,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
-    qualityOfImages: QualityOption
+    qualityOfImages: QualityType,
+    appendState: LoadState
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(128.dp),
@@ -138,39 +140,66 @@ private fun ShowPhotosGrid(
         contentPadding = PaddingValues(8.dp),
         modifier = Modifier.padding(innerPadding)
     ) {
-        items(photos) { photo ->
-            ShowPhotoItem(
-                photo,
-                favourites,
-                onNavigateToWatchPhoto,
-                addToFavourite,
-                deleteFromFavourite,
-                qualityOfImages
-            )
+        items(photoState.itemCount) { index ->
+            val photo = photoState[index]
+            if (photo != null) {
+                ShowPhotoItem(
+                    photo = photo,
+                    favourites = favourites,
+                    onNavigateToWatchPhoto = onNavigateToWatchPhoto,
+                    addToFavourite = addToFavourite,
+                    deleteFromFavourite = deleteFromFavourite,
+                    qualityOfImages = qualityOfImages,
+                )
+            }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            when (appendState) {
+                is LoadState.Loading -> {
+                    Box() {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+
+                is LoadState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        Text(text = stringResource(id = R.string.error_append))
+                    }
+                }
+
+                is LoadState.NotLoading -> {
+                    Unit
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun ShowPhotoItem(
-    photo: ResultDto,
+    photo: Result,
     favourites: List<FavouriteEntity>,
     onNavigateToWatchPhoto: (String, String) -> Unit,
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
-    qualityOfImages: QualityOption,
+    qualityOfImages: QualityType,
 ) {
     var photoQuality by remember {
         mutableStateOf(photo.urls.raw)
     }
     photoQuality = when (qualityOfImages) {
-        QualityOption.WITHOUT_COMPRESSION -> {
+        QualityType.WITHOUT_COMPRESSION -> {
             photo.urls.full
         }
-        QualityOption.WITH_COMPRESSION_75 -> {
+
+        QualityType.WITH_COMPRESSION_75 -> {
             photo.urls.regular
         }
-        QualityOption.SMALL_IMAGE_WITH_COMPRESSION_75 -> {
+
+        QualityType.SMALL_IMAGE_WITH_COMPRESSION_75 -> {
             photo.urls.small
         }
     }
@@ -213,7 +242,7 @@ private fun ShowImageLoading() {
 private fun BoxScope.ShowFavouriteIcon(
     addToFavourite: (FavouriteEntity) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
-    photo: ResultDto,
+    photo: Result,
     favourites: List<FavouriteEntity>
 ) {
     val isPhotoFavourite = isPhotoInFavourites(photo, favourites)
@@ -256,7 +285,7 @@ private fun BoxScope.ShowFavouriteIcon(
     }
 }
 
-private fun isPhotoInFavourites(photo: ResultDto, favourites: List<FavouriteEntity>): Boolean {
+private fun isPhotoInFavourites(photo: Result, favourites: List<FavouriteEntity>): Boolean {
     return favourites.any { favouriteEntity ->
         favouriteEntity.id == photo.id
     }
@@ -266,91 +295,44 @@ private fun isPhotoInFavourites(photo: ResultDto, favourites: List<FavouriteEnti
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun PreviewListPhotosInCategoryScreen() {
+    val favouriteState = Resource.Success(
+        listOf(
+            FavouriteEntity("0", "0"),
+            FavouriteEntity("0", "0"),
+            FavouriteEntity("0", "0")
+        )
+    )
+    val photosState = flowOf(
+        PagingData.from(
+            listOf(
+                Result(
+                    blurHash = "",
+                    color = "",
+                    createdAt = "01-01-2000",
+                    height = 0,
+                    id = "",
+                    likes = 0,
+                    urls = Urls(
+                        "",
+                        "",
+                        "https://w-dog.ru/wallpapers/10/18/464728990985141/priroda-gory-kamni-les.jpg",
+                        "",
+                        ""
+                    ),
+                    width = 0
+                ),
+            )
+        )
+    ).collectAsLazyPagingItems()
+
     ListPhotosInCategoryScreen(
         category = null,
         onNavigateToBack = {},
-        onNavigateToWatchPhoto = { id, url ->
-
-        },
-        photosState = Resource.Success(
-            CategoryItemsDto(
-                results = listOf(
-                    ResultDto(
-                        blurHash = "",
-                        color = "",
-                        createdAt = "01-01-2000",
-                        currentUserCollections = listOf(""),
-                        description = "",
-                        height = 0,
-                        id = "",
-                        likedByUser = false,
-                        likes = 0,
-                        links = LinksDto(download = "", html = "", self = ""),
-                        urls = UrlsDto(
-                            "",
-                            "",
-                            "https://w-dog.ru/wallpapers/10/18/464728990985141/priroda-gory-kamni-les.jpg",
-                            "",
-                            ""
-                        ),
-                        user = UserDto(
-                            "",
-                            "",
-                            "",
-                            "",
-                            LinksXDto("", "", "", ""),
-                            "",
-                            "",
-                            ProfileImageDto("", "", ""),
-                            "",
-                            ""
-                        ),
-                        width = 0
-                    ),
-                    ResultDto(
-                        blurHash = "",
-                        color = "",
-                        createdAt = "01-01-2000",
-                        currentUserCollections = listOf(""),
-                        description = "",
-                        height = 0,
-                        id = "",
-                        likedByUser = false,
-                        likes = 0,
-                        links = LinksDto(download = "", html = "", self = ""),
-                        urls = UrlsDto(
-                            "",
-                            "",
-                            "https://img.newgrodno.by/wp-content/uploads/16165013908V1z7D_t20_YX6vKm.jpg",
-                            "",
-                            ""
-                        ),
-                        user = UserDto(
-                            "",
-                            "",
-                            "",
-                            "",
-                            LinksXDto("", "", "", ""),
-                            "",
-                            "",
-                            ProfileImageDto("", "", ""),
-                            "",
-                            ""
-                        ),
-                        width = 0
-                    )
-                ), total = 0, totalPages = 0
-            )
-        ),
+        onNavigateToWatchPhoto = { id, url -> },
+        photosState = photosState,
         deleteFromFavourite = {},
         addToFavourite = {},
-        favouriteState = Resource.Success(
-            listOf(
-                FavouriteEntity("0", "0"),
-                FavouriteEntity("0", "0"),
-                FavouriteEntity("0", "0")
-            )
-        ),
-        qualityOfImages = QualityOption.WITHOUT_COMPRESSION
+        favouriteState = favouriteState,
+        qualityOfImages = QualityType.WITHOUT_COMPRESSION
     )
 }

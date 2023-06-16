@@ -5,6 +5,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ShowLoadingScreen(
@@ -16,4 +17,10 @@ fun ShowLoadingScreen(
     ) {
         CircularProgressIndicator()
     }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun PreviewShowLoadingScreen() {
+    ShowLoadingScreen()
 }

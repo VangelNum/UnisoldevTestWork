@@ -48,11 +48,11 @@ fun FavouritePhotosScreen(
     favouriteState: Resource<List<FavouriteEntity>>,
     onNavigateToWatchPhoto: (String, String) -> Unit,
     deleteFromFavourite: (FavouriteEntity) -> Unit,
-    onNavigationButtonClick:() -> Unit
+    onNavigationButtonClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
-            AppTopBar (onNavigationButtonClick)
+            AppTopBar(onNavigationButtonClick)
         },
         bottomBar = {
             AppNavigationBar(navController = navController)
@@ -60,9 +60,11 @@ fun FavouritePhotosScreen(
     ) { innerPadding ->
         when (favouriteState) {
             is Resource.Loading -> {
-                ShowLoadingScreen(modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding))
+                ShowLoadingScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                )
             }
 
             is Resource.Error -> {
@@ -98,9 +100,11 @@ fun FavouritePhotosScreen(
                                 .clickable {
                                     onNavigateToWatchPhoto(photos.id, photos.urlPhoto)
                                 }) {
-                                Box(modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(300.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                ) {
                                     SubcomposeAsyncImage(
                                         model = photos.urlPhoto,
                                         modifier = Modifier.fillMaxSize(),
@@ -151,6 +155,22 @@ fun FavouritePhotosIsEmpty(
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Text(text = stringResource(id = R.string.empty_favourite_list))
+    }
+}
+
+@Composable
+@Preview(name = "error loading favourite", showSystemUi = true, showBackground = true)
+fun PreviewErrorPhotosState() {
+    val navController = rememberNavController()
+    FavouritePhotosScreen(
+        navController = navController,
+        favouriteState = Resource.Error("ERROR MESSAGE"),
+        onNavigateToWatchPhoto = { id, url ->
+
+        },
+        deleteFromFavourite = {}
+    ) {
+
     }
 }
 

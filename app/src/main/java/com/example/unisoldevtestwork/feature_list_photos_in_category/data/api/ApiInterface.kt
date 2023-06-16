@@ -8,5 +8,6 @@ interface ApiInterface {
     @GET("/search/photos/")
     suspend fun getPhotosByCategory(
         @Query("query") query: String,
+        @Query("page") page: Int
     ): CategoryItemsDto
 }
